@@ -1,0 +1,24 @@
+## Create masking policy to partially mask data.
+
+
+CREATE OR REPLACE MASKING POLICY DEMO_DB_OWNER.PUBLIC.EMPLOYEE_SSN_MASK_4 AS (VAL STRING) RETURNS STRING ->
+  CASE
+    WHEN CURRENT_ROLE() IN ('SYSADMIN') THEN 
+        CASE WHEN VAL='25-247-272-2878' THEN 'ABCDEFGH' ELSE VAL
+        END
+    ELSE '******'
+  END;
+  
+  
+  # Create below table to follow the scenario,
+  
+    CREATE OR REPLACE TABLE SSN4( SSN_NUMBER STRING MASKING POLICY DEMO_DB_OWNER.PUBLIC.EMPLOYEE_SSN_MASK_4,SSN_NUMBER2 STRING)
+  
+    insert into ssn4(ssn_number,ssn_number2)
+    select C_PHONE,C_PHONE from SNOWFLAKE_SAMPLE_DATA.TPCH_SF10000.CUSTOMER;
+    
+    
+    GRANT SELECT ON SSN4 TO ROLE SANDBOX;
+    
+    
+    

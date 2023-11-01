@@ -1,0 +1,119 @@
+*********main account**********
+
+use role orgadmin;
+Create DEV, QA and PROD Accounts
+
+Account Name - DEV_ACCT
+Account URL - https://aesnmyz-dev_acct.snowflakecomputing.com
+Account Locator - AH15898
+Account Locator URL - https://ah15898.central-india.azure.snowflakecomputing.com
+Region - Central India (Pune)
+
+Admin Login Information
+User Name
+NAVEEN
+Email Address
+prasad.imdb@gmail.com
+
+
+-----------------------------------------------------------
+
+Account Name - QA_ACCT
+Account URL - https://aesnmyz-qa_acct.snowflakecomputing.com
+Account Locator - CV21583
+Account Locator URL - https://cv21583.central-india.azure.snowflakecomputing.com
+Region - Central India (Pune)
+
+Admin Login Information
+User Name
+NAVEEN
+Email Address
+prasad.imdb@gmail.com
+
+--------------------------------------------------------------
+Account Name - PRD_ACCT
+Account URL - https://aesnmyz-prd_acct.snowflakecomputing.com
+Account Locator - ZA44954
+Account Locator URL - https://za44954.central-india.azure.snowflakecomputing.com
+Region - Central India (Pune)
+
+Admin Login Information
+User Name
+NAVEEN
+Email Address
+prasad.imdb@gmail.com
+
+--------------------------------------------------------------
+
+show organization accounts;
+
+alter account original_acctname rename to new_acctname;
+
+
+SELECT SYSTEM$GLOBAL_ACCOUNT_SET_PARAMETER('ZA44954','ENABLE_ACCOUNT_DATABASE_REPLICATION', 'true');
+SELECT SYSTEM$GLOBAL_ACCOUNT_SET_PARAMETER('CV21583','ENABLE_ACCOUNT_DATABASE_REPLICATION', 'true');
+SELECT SYSTEM$GLOBAL_ACCOUNT_SET_PARAMETER('AH15898','ENABLE_ACCOUNT_DATABASE_REPLICATION', 'true');
+
+SHOW REGIONS;
+
+
+*********************PRD_ACCT**************************
+
+create database TALENT;
+CREATE SCHEMA TALENT.SR;
+CREATE SCHEMA TALENT.WORKDAY;
+
+CREATE TABLE "TALENT"."SR".album (
+  id INTEGER PRIMARY KEY,
+  title NVARCHAR(255),
+  artist NVARCHAR(255),
+  label NVARCHAR(255),
+  released NVARCHAR(255)
+);
+
+INSERT INTO "TALENT"."SR".album (id, title, artist, label, released) VALUES (1,'Two Men with the Blues','Willie Nelson and Wynton Marsalis','Blue Note','2008-07-08');
+INSERT INTO "TALENT"."SR".album (id, title, artist, label, released) VALUES (11,'Hendrix in the West','Jimi Hendrix','Polydor','1972-01-00');
+INSERT INTO "TALENT"."SR".album (id, title, artist, label, released) VALUES (12,'Rubber Soul','The Beatles','Parlophone','1965-12-03');
+INSERT INTO "TALENT"."SR".album (id, title, artist, label, released) VALUES (13,'Birds of Fire','Mahavishnu Orchestra','Columbia','1973-03-00');
+INSERT INTO "TALENT"."SR".album (id, title, artist, label, released) VALUES (16,'Live And','Johnny Winter','Columbia','1971-05-00');
+INSERT INTO "TALENT"."SR".album (id, title, artist, label, released) VALUES (17,'Apostrophe','Frank Zappa','DiscReet','1974-04-22');
+INSERT INTO "TALENT"."SR".album (id, title, artist, label, released) VALUES (18,'Kind of Blue','Miles Davis','Columbia','1959-08-17');
+
+create or replace view "TALENT"."SR"."V_ALBUM"
+(
+ id,
+ title,
+ artist,
+ label,
+ released
+ ) AS
+ SELECT * FROM "TALENT"."SR"."ALBUM";
+
+
+alter DATABASE TALENT enable replication to accounts AZURE_CENTRALINDIA.AH15898;
+alter DATABASE TALENT enable replication to accounts AZURE_CENTRALINDIA.CV21583;
+
+*****************QA ACCOUNT***************
+create database TALENT as replica of AZURE_CENTRALINDIA.ZA44954.TALENT;
+alter database TALENT refresh;
+
+
+--to Replicate Dev DB in PRD_ACCT
+alter DATABASE TALENT enable replication to accounts AZURE_CENTRALINDIA.ZA44954;
+
+*****************DEV ACCOUNT***************
+create database TALENT as replica of AZURE_CENTRALINDIA.ZA44954.TALENT;
+alter database TALENT refresh;
+
+--to Replicate QA DB in PRD_ACCT
+alter DATABASE TALENT enable replication to accounts AZURE_CENTRALINDIA.ZA44954;
+
+*******************Again in PRD_ACCT*****************
+create database REPLICATED_TALENT_FROM_QA  as replica of AZURE_CENTRALINDIA.CV21583.TALENT;
+alter database TALENT refresh;
+
+create database REPLICATED_TALENT_FROM_DEV as replica of AZURE_CENTRALINDIA.AH15898.TALENT;
+alter database TALENT refresh;
+
+
+

@@ -1,0 +1,39 @@
+CREATE OR REPLACE PROCEDURE PRASAD.SCHEMA.DROP_TABLE_PROC ()
+RETURNS VARCHAR(16777216)
+LANGUAGE JAVASCRIPT
+EXECUTE AS OWNER
+AS '
+    var list_views = "SELECT TABLE_NAME from INFORMATION_SCHEMA.TABLES where TABLE_SCHEMA = ''SCHEMA'' AND TABLE_NAME LIKE ''TES_%''";
+    var stmt = snowflake.createStatement( {sqlText: list_views} );
+    var rows_result = stmt.execute(); 
+    
+    while(rows_result.next()) {
+    
+    var stg_name = rows_result.getColumnValue(1);
+    
+    var drop_table = "DROP TABLE PRASAD.SCHEMA."+stg_name;
+    
+    snowflake.createStatement( { sqlText: drop_table } ).execute(); 
+        
+    }
+    
+   
+    
+    return ''DROP_TABLES_SUCCESS!'';
+';
+
+CREATE OR REPLACE PROCEDURE PRASAD.SCHEMA.TEST_PROC()
+RETURNS VARCHAR(16777216)
+LANGUAGE JAVASCRIPT
+EXECUTE AS OWNER
+AS '
+var insert_cmd = `
+SELECT 1;
+SELECT 2;
+`
+return ''👍'';
+';
+
+
+CALL PRASAD.SCHEMA.TEST_PROC ();
+CALL PRASAD.SCHEMA.DROP_TABLE_PROC ();

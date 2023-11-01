@@ -1,0 +1,13 @@
+Create notification integration Email_Notification_Integration
+type=email
+enabled=true
+allowed_recipients=('sravanjsfwh@gmail.com');
+
+show integrations like 'EMAIL_NOTIFICATION_INTEGRATION';
+
+CALL SYSTEM$SEND_EMAIL(
+    'EMAIL_NOTIFICATION_INTEGRATION',
+    'sravanjsfwh@gmail.com',
+    'Email Alert: Task has finished.',
+    '<email_content>'
+);

@@ -1,0 +1,25 @@
+CREATE OR REPLACE PROCEDURE PRASAD.SCHEMA.LOAD_TABLES_FROM_OTHER_SCHEMA()
+RETURNS VARCHAR(16777216)
+LANGUAGE JAVASCRIPT
+EXECUTE AS OWNER
+AS 
+' var list_views = 
+" SELECT TABLE_NAME,TRIM(REPLACE(REPLACE(TABLE_NAME,''_OT'',''''),''JDA_'','''')) AS TABLE_NAME_SOX FROM INFORMATION_SCHEMA.TABLES where TABLE_SCHEMA = ''SCHEMA'' AND TABLE_NAME LIKE ''EMPLOYEE%'' ";
+    var stmt = snowflake.createStatement( {sqlText: list_views} );
+    var rows_result = stmt.execute(); 
+    
+    while(rows_result.next()) {
+    
+    var stg_name = rows_result.getColumnValue(1);
+    var sox_name = rows_result.getColumnValue(2);
+    
+    var creat_table = "CREATE OR REPLACE TABLE SCHEMA1."+sox_name+" AS SELECT * FROM SCHEMA."+stg_name;
+    
+    snowflake.createStatement( { sqlText: creat_table } ).execute(); 
+        
+    }
+    
+   
+    
+    return ''LOAD_SOX_TABLES SUCCESS!'';
+';

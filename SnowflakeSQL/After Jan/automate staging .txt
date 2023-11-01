@@ -1,0 +1,559 @@
+CREATE DATABASE STAGE_SAP_DEV;
+
+CREATE SCHEMA STAGE_SAP_DEV.RAW;
+CREATE SCHEMA STAGE_SAP_DEV.STAGE;
+
+
+create or replace TABLE STAGE_SAP_DEV.RAW.EMAIL_OPEN (
+	JOBID NUMBER(38,0),
+	LISTID NUMBER(38,0),
+	BATCHID NUMBER(38,0),
+	SUBSCRIBERID NUMBER(38,0),
+	SUBSCRIBERKEY VARCHAR(254),
+	EVENTDATE TIMESTAMP_NTZ(9),
+	DOMAIN VARCHAR(128),
+	ISUNIQUE BOOLEAN,
+	TRIGGEREDSENDCUSTOMERKEY VARCHAR(36),
+	TRIGGERERSENDDEFINITIONOBJECTID VARCHAR(36),
+	CLIENTID NUMBER(38,0),
+	UNIQUEID VARCHAR(50) NOT NULL,
+	primary key (UNIQUEID)
+);
+
+SELECT * FROM STAGE_SAP_DEV.RAW.EMAIL_OPEN;
+SELECT * FROM STAGE_SAP_DEV.STAGE.SLSFRC_SYNC_EML_OPENS;
+SELECT * FROM STAGE_SAP_DEV.STAGE.SLSFRC_SYNC_USECASE_MGT_CNFG_T;
+
+create or replace TABLE STAGE_SAP_DEV.STAGE.SLSFRC_SYNC_EML_OPENS (
+	JOB_ID VARCHAR(18),
+	LIST_ID VARCHAR(18),
+	BTCH_ID VARCHAR(18),
+	SUB_ID VARCHAR(18),
+	SUB_KEY VARCHAR(255),
+	EVT_DT TIMESTAMP_NTZ(6),
+	DOMN VARCHAR(128),
+	IS_UNQ VARCHAR(5),
+	TRGRD_SEND_CUST_KEY VARCHAR(36),
+	TRGRD_SEND_DFNT_OBJ_ID VARCHAR(36),
+	EVT_TYPE VARCHAR(6),
+	OBJ_ID VARCHAR(18),
+	PRTNR_KEY VARCHAR(18),
+	CREATE_DT TIMESTAMP_NTZ(6),
+	MOD_DT TIMESTAMP_NTZ(6),
+	START_TM TIMESTAMP_NTZ(6),
+	END_TM TIMESTAMP_NTZ(6),
+	CURR_FLG VARCHAR(2),
+	UNQ_ID VARCHAR(100) NOT NULL,
+	CLNT_ID VARCHAR(18),
+	TRANS_ID VARCHAR(255),
+	primary key (UNQ_ID)
+);
+
+create or replace TABLE STAGE_SAP_DEV.STAGE.SLSFRC_SYNC_USECASE_MGT_CNFG_T (
+	USECASE VARCHAR(100),
+	ID VARCHAR(100) NOT NULL,
+	KEY VARCHAR(100),
+	VAL VARCHAR(16777216),
+	EFF_DATE DATE,
+	EXP_DATE DATE,
+	DATA_PIPELINE_PTH VARCHAR(100),
+	primary key (ID)
+);
+
+
+create or replace TABLE STAGE_SAP_DEV.STAGE.SLSFRC_SYNC_USECASE_MGT_LOG_T (
+	USECASE VARCHAR(20),
+	ID VARCHAR(100) NOT NULL,
+	FILE VARCHAR(200),
+	RUN_ID NUMBER(38,0),
+	UTC_TS TIMESTAMP_NTZ(6),
+	MSG VARCHAR(16777216),
+	RESULT_OUT VARCHAR(16777216),
+	QRY_ID VARCHAR(16777216),
+	primary key (ID)
+);
+
+
+CREATE OR REPLACE PROCEDURE STAGE_SAP_DEV.STAGE.DO_LOG("USECASE" VARCHAR(16777216), "ID" VARCHAR(16777216), "FILE_NAME" VARCHAR(16777216), "RUN_IDENTIFIER" VARCHAR(16777216), "MESSAGE" VARCHAR(16777216), "RESULT_OUT" VARCHAR(16777216), "QUERY_ID" VARCHAR(16777216))
+RETURNS VARCHAR(16777216)
+LANGUAGE JAVASCRIPT
+EXECUTE AS CALLER
+AS '
+    var now = new Date();
+    var isoString = now.toISOString();
+    var FILE_NAME = FILE_NAME.substring(1).split(''.'')[0];
+
+       try {
+           snowflake.createStatement( { sqlText: `insert into STAGE_SAP_DEV.STAGE.SLSFRC_SYNC_USECASE_MGT_LOG_T values (:1, :2, :3, :4, :5, :6, :7, :8)`, binds:[USECASE,ID,FILE_NAME,RUN_IDENTIFIER,isoString,MESSAGE,RESULT_OUT,QUERY_ID] } ).execute();
+       } catch (ERROR){
+           throw ERROR;
+       }
+ ';
+
+------------------------------------------------------------------------------------------
+
+CREATE OR REPLACE PROCEDURE STAGE_SAP_DEV.STAGE.SF_INGESTION_WORKFLOW_CREATE_MERGESTATEMENT_SYNCOUT("INPUT_STREAM" VARCHAR(16777216), 
+"INPUT_LANDING_TABLE" VARCHAR(16777216), "INPUT_DB_TABLE" VARCHAR(16777216), "LANDING_TABLE_COLUMNS" VARCHAR(16777216), "DB_TABLE_COLUMNS" VARCHAR(16777216), 
+ "LANDING_PRIMARY_KEYS" VARCHAR(16777216), "DB_PRIMARY_KEYS" VARCHAR(16777216), "LOAD_TYPE" VARCHAR(16777216), "LANDING_TABLE_MAX_LAST_MODIFIED_TIME" VARCHAR(16777216))
+RETURNS VARCHAR(16777216)
+LANGUAGE JAVASCRIPT
+COMMENT='SP will generates dynamic merge statement based on load_type'
+EXECUTE AS CALLER
+AS '
+// Read Variables
+// Stream variables
+var INPUT_STREAM_SPLIT = INPUT_STREAM.split(".").map(item => item.trim());
+var STR_SCHEMA = INPUT_STREAM_SPLIT[0];
+var STR_TABLE_NM = INPUT_STREAM_SPLIT[1];
+
+// Landing variables
+var INPUT_LANDING_TABLE_SPLIT = INPUT_LANDING_TABLE.split(".").map(item => item.trim());
+var LANDING_SCHEMA = INPUT_LANDING_TABLE_SPLIT[0];
+var LANDING_TABLE_NM = INPUT_LANDING_TABLE_SPLIT[1];
+
+// DB Table variables
+var INPUT_DB_TABLE_SPLIT = INPUT_DB_TABLE.split(".").map(item => item.trim());
+var DB_SCHEMA = INPUT_DB_TABLE_SPLIT[0];
+var DB_TABLE_NM = INPUT_DB_TABLE_SPLIT[1];
+
+// Primary Keys
+var source_pkey_list = LANDING_PRIMARY_KEYS.split('','').map(item => item.trim());
+var target_pkey_list = DB_PRIMARY_KEYS.split('','').map(item => item.trim());
+
+var landing_columns_list = LANDING_TABLE_COLUMNS.split('','').map(item => item.trim());
+var db_columns_list = DB_TABLE_COLUMNS.split('','').map(item => item.trim());
+
+var fin_insert_col = db_columns_list.map(i => ''target.'' + i);
+var fin_insert_val = landing_columns_list.map(i => ''source.'' + i);
+
+var update_col = [];
+for (i = 0; i < landing_columns_list.length; i++) {
+    update_col.push(fin_insert_col[i] + '' = '' + fin_insert_val[i]);
+}
+update_col.push(''target.start_tm = CURRENT_TIMESTAMP()'');
+
+// Create merge statement
+// Merge statement for SCD2 Load
+try {
+    if (LOAD_TYPE.trim().toUpperCase() === "SCD2") {
+
+        var mrg_sql = "MERGE INTO "
+        mrg_sql += DB_SCHEMA + "." + DB_TABLE_NM + " target "
+        mrg_sql += " USING  " + STR_SCHEMA + "." + STR_TABLE_NM + " source ON "
+
+        for (var i = 0; i < target_pkey_list.length; i++) {
+            mrg_sql += "target."
+            mrg_sql += target_pkey_list[i]
+            mrg_sql += "=source."
+            mrg_sql += source_pkey_list[i]
+            if (i < target_pkey_list.length - 1) {
+                mrg_sql += " AND "
+            }
+        }
+
+        mrg_sql += " WHEN matched AND (source.metadata$action=''DELETE'') then update"
+        mrg_sql += " set target.END_TM = current_timestamp()::timestamp_ntz,target.CURR_FLG = ''N''"
+        mrg_sql += " WHEN NOT MATCHED and (source.metadata$action=''INSERT'') then insert (" + fin_insert_col + ")"
+        mrg_sql += " VALUES  (" + fin_insert_val + ", CURRENT_TIMESTAMP(),''9999-12-31''::timestamp_ntz, ''Y'') "
+
+    }
+
+    // Merge statement for SCD1 Load
+    if (LOAD_TYPE.trim().toUpperCase() === "SCD1") {
+
+        var mrg_sql = "MERGE INTO "
+        mrg_sql += DB_SCHEMA + "." + DB_TABLE_NM + " target "
+        mrg_sql += " USING (select * from (select *,row_number() over (partition by " + source_pkey_list[0] + " order by metadata$action desc ) as row_number from " + STR_SCHEMA + "." + STR_TABLE_NM + ") temp where not (temp.metadata$action=''DELETE'' and  temp.row_number=2))   source ON "
+        for (var i = 0; i < 1; i++) {
+            mrg_sql += "target."
+            mrg_sql += target_pkey_list[i]
+            mrg_sql += "=source."
+            mrg_sql += source_pkey_list[i]
+        }
+        mrg_sql += " AND target.CURR_FLG = ''Y''"
+        //        mrg_sql += " WHEN matched AND (source.metadata$action=''DELETE'') then DELETE"
+        mrg_sql += " WHEN matched AND (source.metadata$action=''DELETE'') then update"
+        mrg_sql += " set target.END_TM = current_timestamp()::timestamp_ntz,target.CURR_FLG = ''N''"
+        mrg_sql += " WHEN MATCHED and (source.metadata$action=''INSERT'')" + " THEN UPDATE SET " + update_col + ",target.END_TM = current_timestamp()::timestamp_ntz,target.CURR_FLG = ''Y''"
+        mrg_sql += " WHEN NOT MATCHED and (source.metadata$action=''INSERT'') then insert (" + fin_insert_col + ")"
+        mrg_sql += " VALUES  (" + fin_insert_val + ", CURRENT_TIMESTAMP(),''9999-12-31''::timestamp_ntz, ''Y'') "
+
+    }
+
+    // Merge statement for History Load
+    if (LOAD_TYPE.trim().toUpperCase() === "HISTORY") {
+
+        var mrg_sql = "INSERT INTO "
+        mrg_sql += DB_SCHEMA + "." + DB_TABLE_NM
+        mrg_sql += " (" + db_columns_list + ")"
+        mrg_sql += " SELECT " + fin_insert_val + ", CURRENT_TIMESTAMP(),''9999-12-31''::timestamp_ntz, ''Y'' FROM "
+        mrg_sql += STR_SCHEMA + "." + STR_TABLE_NM + " source"
+        mrg_sql += " WHERE source.metadata$action=''INSERT'' "
+
+    }
+
+    // Merge statement if landing table is dropped and recreated. type - SCD 1
+    if (LOAD_TYPE.trim().toUpperCase() === "FULL_MERGE") {
+
+        var mrg_sql = "MERGE INTO " + DB_SCHEMA + "." + DB_TABLE_NM + " target "
+        var LANDING_PRIMARY_KEY = LANDING_PRIMARY_KEYS.split(",").map(item => item.trim())[0]
+        var DB_PRIMARY_KEY = DB_PRIMARY_KEYS.split(",").map(item => item.trim())[0]
+        mrg_sql += " USING ( SELECT source.*, NVL(source." + LANDING_PRIMARY_KEY + ", target." + DB_PRIMARY_KEY + ") comb_id FROM "
+
+        mrg_sql += "\\"" + LANDING_SCHEMA + "\\".\\"" + LANDING_TABLE_NM + "\\" source FULL OUTER JOIN (select * from "
+        mrg_sql += DB_SCHEMA + "." + DB_TABLE_NM + " trg where trg.CURR_FLG = ''Y'') target ON "
+        mrg_sql += "source." + LANDING_PRIMARY_KEY + " = target." + DB_PRIMARY_KEY + ") comb ON "
+        mrg_sql += "comb.comb_id = target." + DB_PRIMARY_KEY + " and target.CURR_FLG = ''Y'' "
+        mrg_sql += " WHEN NOT MATCHED and comb." + LANDING_PRIMARY_KEY + " is not null THEN INSERT (" + fin_insert_col + ")"
+
+        var merge_fin_insert_val = landing_columns_list.map(i => ''comb.'' + i);
+
+        mrg_sql += " VALUES  (" + merge_fin_insert_val + ", CURRENT_TIMESTAMP(),''9999-12-31''::timestamp_ntz, ''Y'') "
+        mrg_sql += " WHEN matched and comb." + LANDING_PRIMARY_KEY + " is null and target.CURR_FLG = ''Y'' THEN UPDATE SET target.END_TM = current_timestamp()::timestamp_ntz,target.CURR_FLG = ''N''"
+        mrg_sql += " WHEN matched and comb." + LANDING_PRIMARY_KEY + " IS NOT NULL and target.CURR_FLG = ''Y'' "
+
+        var LANDING_LAST_MODIFIED_COLUMN = LANDING_PRIMARY_KEYS.split(",").map(item => item.trim())[1];
+        var DB_LAST_MODIFIED_COLUMN = DB_PRIMARY_KEYS.split(",").map(item => item.trim())[1];
+        var LANDING_LAST_MODIFIED_CONDITION = "";
+        if (LANDING_LAST_MODIFIED_COLUMN) {
+            LANDING_LAST_MODIFIED_CONDITION = " AND comb." + LANDING_LAST_MODIFIED_COLUMN + " > target." + DB_LAST_MODIFIED_COLUMN
+        }
+
+        var merge_update_col = [];
+        for (i = 0; i < landing_columns_list.length; i++) {
+            merge_update_col.push(fin_insert_col[i] + '' = '' + merge_fin_insert_val[i]);
+        }
+        merge_update_col.push(''target.start_tm = CURRENT_TIMESTAMP()'');
+
+        mrg_sql += LANDING_LAST_MODIFIED_CONDITION + " THEN UPDATE SET " + merge_update_col + ";"
+    }
+
+
+    return mrg_sql;
+} catch (err) {
+    return ''Error :'' + err;
+}
+';
+
+SELECT * FROM STAGE_SAP_DEV.STAGE.SLSFRC_SYNC_USECASE_MGT_CNFG_T
+------------------------------------------------------
+
+CREATE OR REPLACE PROCEDURE STAGE_SAP_DEV.STAGE.UPDATE_CNFG_T_LAST_TIMESTAMP("USECASE" VARCHAR(16777216), "ID" VARCHAR(16777216),
+ "KEY" VARCHAR(16777216), "VAL" VARCHAR(16777216))
+RETURNS VARCHAR(16777216)
+LANGUAGE JAVASCRIPT
+EXECUTE AS CALLER
+AS '
+       
+       var result;
+       try {
+           snowflake.createStatement( { sqlText: `UPDATE STAGE_SAP_DEV.STAGE.SLSFRC_SYNC_USECASE_MGT_CNFG_T SET VAL = :4 WHERE USECASE = :1 AND ID = :2 AND KEY = :3 AND EXP_DATE is NULL`, binds:[USECASE,ID,KEY,VAL] } ).execute();
+           result = "SUCCESS"
+       } catch (ERROR){
+           throw ERROR;
+           result = "FAILURE"
+       }
+       return result;
+ ';
+
+ -----------------------------------------
+
+
+ CREATE OR REPLACE PROCEDURE STAGE_SAP_DEV.STAGE.SALESFORCE_SYNCOUT_SNFL_INGESTION_WORKFLOW("USECASE" VARCHAR(16777216), "ID" VARCHAR(16777216))
+RETURNS VARCHAR(16777216)
+LANGUAGE JAVASCRIPT
+EXECUTE AS CALLER
+AS '
+    class Query {
+        constructor(statement) {
+            this.statement = statement;
+        }
+    }
+    
+    // Define required functions
+    // Function executeSnowSql: This function executes the snowflake SQL. It takes SQL statement as an argument.
+    
+    function executeSnowSql(sql) {
+        var cmd = {
+            sqlText: sql
+        };
+        var query = new Query(snowflake.createStatement(cmd));
+        query.resultSet = query.statement.execute();
+        return query;
+    }
+    
+    // Function returnResultScan: This function returns the result of the executed query. Takes no argument.
+    
+    var return_result_scan_query = "";
+    function returnResultScan() {
+        var result_scan_command = "select * from table(result_scan())";
+        var statement1 = snowflake.createStatement( {sqlText: result_scan_command} );
+        var result_set1 = statement1.execute();
+        result_set1.next()
+        var return_result_scan_query = result_set1.getColumnValue(1);
+        try {
+            return_result2_scan_query = result_set1.getColumnValue(2);
+            return_result_scan_query = return_result_scan_query + "/" + return_result2_scan_query
+        } catch(err) {
+        }
+        return return_result_scan_query;
+    }
+    
+    // Function returnResultid: This function returns the QueryID of the executed query. Takes no argument.
+    
+    function returnResultid() {
+        var query_id_command = "select last_query_id(-2)";
+        var statement2 = snowflake.createStatement( {sqlText: query_id_command} );
+        var result_set2 = statement2.execute();
+        result_set2.next()
+        return_query_id = result_set2.getColumnValue(1);
+        return return_query_id;
+    }
+
+    //Function log: This function logs information into SLSFRC_SYNC_USECASE_MGT_LOG_T table. Takes 7 arguments.
+    function log(USECASE,ID,INPUT_DB_TABLE,run_identifier,message,return_result_scan_query,return_query_id) {
+        snowflake.createStatement( { sqlText: `call STAGE_SAP_DEV.STAGE.DO_LOG(:1, :2, :3, :4, :5, :6, :7)`, binds:[USECASE,ID,INPUT_DB_TABLE,run_identifier,message,return_result_scan_query,return_query_id] } ).execute();
+    }
+
+	function SyncOutMergeStatement(INPUT_STREAM, INPUT_LANDING_TABLE, INPUT_DB_TABLE, LANDING_TABLE_COLUMNS, DB_TABLE_COLUMNS,LANDING_PRIMARY_KEYS,DB_PRIMARY_KEYS, LOAD_TYPE, LANDING_TABLE_MAX_LAST_MODIFIED_TIME) {
+           var merg_cmd =  snowflake.createStatement( { sqlText: `CALL STAGE_SAP_DEV.STAGE.SF_INGESTION_WORKFLOW_CREATE_MERGESTATEMENT_SYNCOUT(:1, :2, :3, :4, :5, :6, :7, :8, :9)`, binds:[INPUT_STREAM, INPUT_LANDING_TABLE, INPUT_DB_TABLE, LANDING_TABLE_COLUMNS, DB_TABLE_COLUMNS, LANDING_PRIMARY_KEYS, DB_PRIMARY_KEYS, LOAD_TYPE, LANDING_TABLE_MAX_LAST_MODIFIED_TIME] } ).execute();
+           merg_cmd.next();
+           var merg_cmd_return_query = merg_cmd.getColumnValue(1);
+           return merg_cmd_return_query;
+    }
+    
+    //This function updates the config table with the landing table creation date.
+    function updateConfigTableLastModifiedDate(USECASE,ID,KEY,VAL) {
+        snowflake.createStatement( { sqlText: `call STAGE_SAP_DEV.STAGE.UPDATE_CNFG_T_LAST_TIMESTAMP(:1, :2, :3, :4)`, binds:[USECASE,ID,KEY,VAL] } ).execute();
+    }
+
+    var run_identifier_sql = executeSnowSql("select case when max(run_id) is null then ''1'' else max(run_id) + 1 end as result from STAGE_SAP_DEV.STAGE.SLSFRC_SYNC_USECASE_MGT_LOG_T v");
+    run_identifier_sql.resultSet.next();
+    var run_identifier = run_identifier_sql.resultSet.getColumnValue(1);
+        
+    // This variable will hold a JSON data structure that holds ONE row.
+    var row_as_json = {};
+    // This array will contain all the rows.
+    var array_of_rows = [];
+    // This variable will hold a JSON data structure that we can return as
+    // a VARIANT.
+    // This will contain ALL the rows in a single "val".
+    var table_as_json = {};
+
+    // Extract key, Val from SLSFRC_SYNC_USECASE_MGT_CNFG_T
+     var COL_NAMES = ["KEY", "VAL"];
+    // var ui_command = "SELECT distinct USECASE, ID FROM STAGE_SAP_DEV.STAGE.SLSFRC_SYNC_USECASE_MGT_CNFG_T WHERE EFF_DATE <= CURRENT_DATE AND EXP_DATE is NULL";
+    // var ui_query = executeSnowSql(ui_command);
+    // while (ui_query.resultSet.next()) {
+    //     var USECASE = ui_query.resultSet.getColumnValue(''USECASE'');
+    //     var ID = ui_query.resultSet.getColumnValue(''ID'');
+        
+    //Read SLSFRC_SYNC_USECASE_MGT_CNFG_T table.
+    var config_command = "SELECT upper(trim(key)), upper(trim(val)) FROM STAGE_SAP_DEV.STAGE.SLSFRC_SYNC_USECASE_MGT_CNFG_T WHERE USECASE = ''" + USECASE + "'' AND ID = ''" + ID + "'' AND EFF_DATE <= CURRENT_DATE AND EXP_DATE is NULL AND DATA_PIPELINE_PTH = ''SF_SYOT_SNFL''"
+    var out = {};
+    var config_query = executeSnowSql(config_command);
+
+    // Read each row and add it to the array we will return.
+    var row_num = 1;
+    while (config_query.resultSet.next()) {
+        // Put each row in a variable of type JSON.
+        row_as_json = {};
+        // For each column in the row...
+        for (var col_num = 0; col_num < COL_NAMES.length; col_num = col_num + 1) {
+            var col_name = COL_NAMES[col_num];
+            row_as_json[col_name] = config_query.resultSet.getColumnValue(col_num + 1);
+        }
+        // Add the row to the array of rows.
+        array_of_rows.push(row_as_json);
+        ++row_num;
+    }
+    array_of_rows.forEach(function(item) {
+        array_of_rows[item.KEY] = item;
+    });
+    //read variables and assign var
+
+    var INPUT_LANDING_TABLE = array_of_rows["INPUT_LANDING_TABLE"].VAL
+    var INPUT_STREAM = array_of_rows["INPUT_STREAM"].VAL
+    var INPUT_DB_TABLE = array_of_rows["INPUT_DB_TABLE"].VAL
+    var LANDING_PRIMARY_KEYS = array_of_rows["LANDING_PRIMARY_KEYS"].VAL
+    var DB_PRIMARY_KEYS = array_of_rows["DB_PRIMARY_KEYS"].VAL
+    var LANDING_TABLE_COLUMNS = array_of_rows["LANDING_TABLE_COLUMNS"].VAL
+    var DB_TABLE_COLUMNS = array_of_rows["DB_TABLE_COLUMNS"].VAL
+    var LOAD_TYPE = array_of_rows["LOAD_TYPE"].VAL
+    var LANDING_TABLE_CREATION_DATE = array_of_rows["LANDING_TABLE_CREATION_DATE"].VAL
+    var LANDING_TABLE_MAX_LAST_MODIFIED_TIME = array_of_rows["LANDING_TABLE_MAX_LAST_MODIFIED_TIME"].VAL
+    
+    // add extra first letter(This is done becasue do_log removed first character)
+    var LOG_INPUT_DB_TABLE_FIRST_CHARACTER = INPUT_DB_TABLE.split(''.'')[1].charAt(1);
+    var LOG_INPUT_DB_TABLE = LOG_INPUT_DB_TABLE_FIRST_CHARACTER + INPUT_DB_TABLE.split(''.'')[1];
+    
+    // Check if landing table is recreated    
+    var INPUT_LANDING_TABLE_SCHEMA = INPUT_LANDING_TABLE.split(".").map(item=>item.trim())[0]
+    var INPUT_LANDING_TABLE_NAME = INPUT_LANDING_TABLE.split(".").map(item=>item.trim())[1]
+
+    log(USECASE,ID,LOG_INPUT_DB_TABLE,run_identifier,"Starting procedure SALESFORCE_SYNCOUT_SNFL_INGESTION_WORKFLOW for " + USECASE + ", " + ID ,"","");
+	
+    var LANDING_INFORMATION_SCHEMA_QUERY = executeSnowSql("select to_varchar(CREATED, ''yyyy-mm-dd hh:mi:ss'') from STAGE_SAP_DEV.INFORMATION_SCHEMA.TABLES where TABLE_SCHEMA = ''" + INPUT_LANDING_TABLE_SCHEMA + "'' and TABLE_NAME = ''"+ INPUT_LANDING_TABLE_NAME + "''")
+    var INFORMATION_SCHEMA_LANDING_TABLE_CREATION_DATE = returnResultScan()
+    
+    //add streams check condition
+    if (LOAD_TYPE.trim().toUpperCase() !== "FULL_LOAD"){
+		if (INFORMATION_SCHEMA_LANDING_TABLE_CREATION_DATE.trim() === LANDING_TABLE_CREATION_DATE.trim()){
+			var LANDING_TABLE_RECREATED = "FALSE"
+		} else {
+			var LANDING_TABLE_RECREATED = "TRUE"
+			LOAD_TYPE = "FULL_MERGE"
+		}
+	}
+    
+	log(USECASE,ID,LOG_INPUT_DB_TABLE,run_identifier,"Load type : " + LOAD_TYPE ,"","");
+    
+    //calculate Maximum LASTMODIFIEDDATE
+	var LANDING_LAST_MODIFIED_COLUMN = LANDING_PRIMARY_KEYS.split(",").map(item=>item.trim())[1]
+	var CURRENT_MAX_LASTMODIFIEDDATE_VAL = ""
+	if(LANDING_LAST_MODIFIED_COLUMN){
+		var LastModifiedDate_query = "select cast(max(" + LANDING_LAST_MODIFIED_COLUMN + ") as string) from " + "\\"" + INPUT_LANDING_TABLE_SCHEMA + "\\".\\"" + INPUT_LANDING_TABLE_NAME + "\\""
+		var LastModifiedDate_execute = executeSnowSql(LastModifiedDate_query);
+		CURRENT_MAX_LASTMODIFIEDDATE_VAL = returnResultScan();
+		log(USECASE,ID,LOG_INPUT_DB_TABLE,run_identifier,LastModifiedDate_query,CURRENT_MAX_LASTMODIFIEDDATE_VAL,returnResultid());
+	}
+	
+    // create dynamic queries
+    var begin_transaction = "begin";
+    
+    if (LOAD_TYPE.trim().toUpperCase() === "FULL_LOAD"){
+
+        //truncate db 
+        var trunc_db = "delete from " + INPUT_DB_TABLE ;
+        
+        var landing_columns_list = LANDING_TABLE_COLUMNS.split('','').map(item=>item.trim());
+	    var db_columns_list = DB_TABLE_COLUMNS.split('','').map(item=>item.trim());
+        
+        var insrt_sql = "INSERT INTO "
+        insrt_sql += INPUT_DB_TABLE  
+        insrt_sql += " (" + db_columns_list + ")"
+        insrt_sql += " SELECT " + landing_columns_list + ", CURRENT_TIMESTAMP(),''9999-12-31''::timestamp_ntz, ''Y'' FROM "
+        insrt_sql += "\\"" + INPUT_LANDING_TABLE_SCHEMA + "\\".\\"" + INPUT_LANDING_TABLE_NAME + "\\"" 
+        
+    } else {
+        var merg_cmd = SyncOutMergeStatement(INPUT_STREAM,INPUT_LANDING_TABLE, INPUT_DB_TABLE, LANDING_TABLE_COLUMNS, DB_TABLE_COLUMNS,LANDING_PRIMARY_KEYS,DB_PRIMARY_KEYS, LOAD_TYPE,LANDING_TABLE_MAX_LAST_MODIFIED_TIME);
+    }
+//    var trunc_landing = "delete from " + INPUT_STAGE_TABLE ;
+    var commit_transaction = "commit";
+//
+    
+    // Array with the execution order
+    if (LOAD_TYPE.trim().toUpperCase() === "FULL_LOAD"){
+        var execution_statement_array = [begin_transaction,trunc_db,insrt_sql,commit_transaction];
+    } else if (LANDING_TABLE_RECREATED === "TRUE") {
+        var drop_stream = "drop stream " + INPUT_STREAM 
+        var create_stream = "create stream " + INPUT_STREAM + " on table " + "\\"" + INPUT_LANDING_TABLE_SCHEMA + "\\".\\"" + INPUT_LANDING_TABLE_NAME + "\\""
+        var execution_statement_array = [begin_transaction,merg_cmd,commit_transaction];
+    }
+    else {
+        var execution_statement_array = [begin_transaction,merg_cmd,commit_transaction];
+    }
+    
+    var result = "";
+
+    for (var execution_statement of execution_statement_array) {
+        try {
+            var out = {};
+            query = executeSnowSql(execution_statement); 
+            log(USECASE,ID,LOG_INPUT_DB_TABLE,run_identifier,execution_statement,returnResultScan(),returnResultid());
+        } catch (err) {
+            var rollback_transaction = "rollback";
+            query = executeSnowSql(rollback_transaction);
+            result =  "Failed: " + err;
+            result += "\\n    Failed: Code: " + err.code + "\\n  State: " + err.state;
+            result += "\\n    Stack Trace:\\n" + err.stackTraceTxt;
+            result += "\\n    Failed SQL Statement: " + execution_statement;
+            log(USECASE,ID,LOG_INPUT_DB_TABLE,run_identifier,execution_statement,"Process failed. No commits are made.",returnResultScan(),returnResultid());
+            break;
+        };
+    };
+	
+    if (result.includes(''Failed:'')) {
+        log(USECASE,ID,LOG_INPUT_DB_TABLE,run_identifier,"Process failed. No commits are made","","");
+    } else {
+        result += "Success";
+        log(USECASE,ID,LOG_INPUT_DB_TABLE,run_identifier,"Success","","");
+		updateConfigTableLastModifiedDate(USECASE,ID,''LANDING_TABLE_MAX_LAST_MODIFIED_TIME'',CURRENT_MAX_LASTMODIFIEDDATE_VAL);
+        if (LANDING_TABLE_RECREATED === "TRUE" && LOAD_TYPE.trim().toUpperCase() !== "FULL_LOAD")  {
+            //updateConfigTableLastModifiedDate(USECASE,ID,''LANDING_TABLE_CREATION_DATE'',INFORMATION_SCHEMA_LANDING_TABLE_CREATION_DATE);
+        }
+    }
+    return result;
+';
+
+--------------------------------------------------------------------------------------
+
+INSERT INTO STAGE_SAP_DEV.STAGE."SLSFRC_SYNC_USECASE_MGT_CNFG_T" VALUES 
+('CLM','1','INPUT_LANDING_TABLE','RAW.EMAIL_OPEN','2023-04-05',null,'SF_SYOT_SNFL');
+
+
+INSERT INTO STAGE_SAP_DEV.STAGE."SLSFRC_SYNC_USECASE_MGT_CNFG_T" VALUES 
+('CLM','1','INPUT_STREAM','STAGE.EMAIL_OPEN_STREAM','2023-04-05',null,'SF_SYOT_SNFL');
+
+INSERT INTO STAGE_SAP_DEV.STAGE."SLSFRC_SYNC_USECASE_MGT_CNFG_T" VALUES 
+('CLM','1','INPUT_DB_TABLE','STAGE.SLSFRC_SYNC_EML_OPENS','2023-04-05',null,'SF_SYOT_SNFL');
+
+INSERT INTO STAGE_SAP_DEV.STAGE."SLSFRC_SYNC_USECASE_MGT_CNFG_T" VALUES 
+('CLM','1','LANDING_PRIMARY_KEYS','UNIQUEID','2023-04-05',null,'SF_SYOT_SNFL');
+
+INSERT INTO STAGE_SAP_DEV.STAGE."SLSFRC_SYNC_USECASE_MGT_CNFG_T" VALUES 
+('CLM','1','DB_PRIMARY_KEYS','UNQ_ID','2023-04-05',null,'SF_SYOT_SNFL');
+
+INSERT INTO STAGE_SAP_DEV.STAGE."SLSFRC_SYNC_USECASE_MGT_CNFG_T" VALUES ('CLM','1', 'LANDING_TABLE_COLUMNS', 
+'JOBID,LISTID,BATCHID,SUBSCRIBERID,SUBSCRIBERKEY,EVENTDATE,DOMAIN,ISUNIQUE,TRIGGEREDSENDCUSTOMERKEY,
+TRIGGERERSENDDEFINITIONOBJECTID,CLIENTID,UNIQUEID','2022-04-05',null,'SF_SYOT_SNFL');
+
+INSERT INTO STAGE_SAP_DEV.STAGE."SLSFRC_SYNC_USECASE_MGT_CNFG_T" VALUES ('CLM','1', 'DB_TABLE_COLUMNS',
+'JOB_ID,LIST_ID,BTCH_ID,SUB_ID,SUB_KEY,EVT_DT,DOMN,
+IS_UNQ,TRGRD_SEND_CUST_KEY,TRGRD_SEND_DFNT_OBJ_ID,CLNT_ID,UNQ_ID,START_TM,END_TM,CURR_FLG','2022-04-05',null,'SF_SYOT_SNFL');
+
+INSERT INTO STAGE_SAP_DEV.STAGE."SLSFRC_SYNC_USECASE_MGT_CNFG_T" VALUES 
+('CLM','1','LOAD_TYPE','HISTORY','2023-04-05',null,'SF_SYOT_SNFL');
+
+INSERT INTO STAGE_SAP_DEV.STAGE."SLSFRC_SYNC_USECASE_MGT_CNFG_T" VALUES 
+('CLM','1','LANDING_TABLE_MAX_LAST_MODIFIED_TIME','2000-01-01 00:00:01','2023-04-05',null,'SF_SYOT_SNFL');
+
+INSERT INTO STAGE_SAP_DEV.STAGE."SLSFRC_SYNC_USECASE_MGT_CNFG_T" VALUES 
+('CLM','1','LANDING_TABLE_CREATION_DATE','TEMP','2023-04-05',null,'SF_SYOT_SNFL');
+
+SELECT * FROM STAGE_SAP_DEV.STAGE."SLSFRC_SYNC_USECASE_MGT_CNFG_T";
+
+UPDATE STAGE_SAP_DEV.STAGE."SLSFRC_SYNC_USECASE_MGT_CNFG_T"
+SET VAL= (select to_varchar(CREATED, 'yyyy-mm-dd hh:mi:ss') 
+from "INFORMATION_SCHEMA"."TABLES" where TABLE_SCHEMA = 'RAW' and TABLE_name = 'EMAIL_OPEN')  
+WHERE VAL='TEMP' and key='LANDING_TABLE_CREATION_DATE' and usecase='CLM' and id='1';
+
+-------------------------------------------------------------------------------------------------------
+INSERT INTO STAGE_SAP_DEV.RAW.EMAIL_OPEN VALUES 
+(1974,15,17202,3390508,'0016g000017xArwAAE','2023-04-09T21:03:40Z','hotmail.com',TRUE,'632',
+'9977B611-5655-EB11-A2F5-48DF373426C0',514005537,'0016g000017xArwAAE1');
+
+create or replace stream STAGE_SAP_DEV.STAGE.EMAIL_OPEN_STREAM on table STAGE_SAP_DEV.RAW.EMAIL_OPEN
+SHOW_INITIAL_ROWS = TRUE;
+
+
+
+SELECT * FROM STAGE_SAP_DEV.RAW.EMAIL_OPEN;
+SELECT * FROM STAGE_SAP_DEV.STAGE.SLSFRC_SYNC_EML_OPENS;
+SELECT * FROM STAGE_SAP_DEV.STAGE.SLSFRC_SYNC_USECASE_MGT_CNFG_T;
+select * from STAGE.SLSFRC_SYNC_USECASE_MGT_LOG_T ;
+
+SELECT * FROM STAGE_SAP_DEV.STAGE.EMAIL_OPEN_STREAM ;
+
+
+CALL STAGE_SAP_DEV.STAGE.SALESFORCE_SYNCOUT_SNFL_INGESTION_WORKFLOW('CLM','1');
+
+select * from STAGE.SLSFRC_SYNC_USECASE_MGT_LOG_T ;
+
+UPDATE STAGE_SAP_DEV.STAGE."SLSFRC_SYNC_USECASE_MGT_CNFG_T"
+SET VAL= 'SCD1'  
+WHERE VAL='HISTORY' and key='LOAD_TYPE' and usecase='CLM' and id='1';
+
+UPDATE STAGE_SAP_DEV.RAW.EMAIL_OPEN
+SET ISUNIQUE= FALSE
+WHERE JOBID = 1974

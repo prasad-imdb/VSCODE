@@ -1,0 +1,20 @@
+create or replace table mytable
+(
+  src variant
+);
+ 
+insert into mytable
+  select parse_json(column1)
+  from values
+  ('{
+  "a": "1",
+  "b": "2",
+  "c": null
+  }')
+  , ('{
+  "a": "1",
+  "b": "2",
+  "c": "3"
+  }');
+ 
+select strip_null_value(src:c) from mytable;

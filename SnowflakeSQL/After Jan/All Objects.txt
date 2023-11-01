@@ -1,0 +1,232 @@
+CREATE VIEW "NAVEEN"."SALES"."V_EMPLOYEES" AS
+SELECT * FROM "NAVEEN"."SALES"."EMPLOYEES";
+SELECT GET_DDL('VIEW',"MOVIES_BY_NAME") ;
+select get_ddl('VIEW', 'MOVIES_BY_NAME');
+
+--3 TYPES :
+-- VIEWS
+--SECURE VIEWS -- 
+--MATREIALSED VIEW 
+
+create OR REPLACE view "V_STORE_REVENUE" AS
+SELECT
+    b."STORE_NAME",
+    a."PRODUCT_NAME",
+    IFNULL(c.revenue, 0) AS revenue
+FROM "PRODUCTS" AS a
+CROSS JOIN
+"STORES" AS b
+LEFT JOIN
+    (SELECT
+        "STORES"."ID" AS "STORE_ID",
+        "PRODUCTS"."ID" AS "PRODUCT_ID",
+        "STORE_NAME",
+        "PRODUCT_NAME",
+         ROUND(SUM("QUANTITY" * "PRICE"), 0) AS revenue
+    FROM
+        "SALES"
+    INNER JOIN "PRODUCTS" ON "PRODUCTS"."ID" = "SALES"."PRODUCT_ID"
+    INNER JOIN "STORES" ON "STORES"."ID" = "SALES"."STORE_ID"
+    GROUP BY "STORE_NAME" , "PRODUCT_NAME","STORES"."ID","PRODUCTS"."ID") AS c 
+    ON c."STORE_ID" = b."ID"
+   AND c."PRODUCT_ID"= a."ID"
+ORDER BY b."STORE_NAME";
+
+
+
+create OR REPLACE SECURE view "V_SECURE_STORE_REVENUE" AS
+SELECT
+    b."STORE_NAME",
+    a."PRODUCT_NAME",
+    IFNULL(c.revenue, 0) AS revenue
+FROM "PRODUCTS" AS a
+CROSS JOIN
+"STORES" AS b
+LEFT JOIN
+    (SELECT
+        "STORES"."ID" AS "STORE_ID",
+        "PRODUCTS"."ID" AS "PRODUCT_ID",
+        "STORE_NAME",
+        "PRODUCT_NAME",
+         ROUND(SUM("QUANTITY" * "PRICE"), 0) AS revenue
+    FROM
+        "SALES"
+    INNER JOIN "PRODUCTS" ON "PRODUCTS"."ID" = "SALES"."PRODUCT_ID"
+    INNER JOIN "STORES" ON "STORES"."ID" = "SALES"."STORE_ID"
+    GROUP BY "STORE_NAME" , "PRODUCT_NAME","STORES"."ID","PRODUCTS"."ID") AS c 
+    ON c."STORE_ID" = b."ID"
+   AND c."PRODUCT_ID"= a."ID"
+ORDER BY b."STORE_NAME";
+
+------------------------MATERIALISED VIEW-----------
+
+CREATE OR REPLACE TABLE TD_STORE_REVENUE AS
+SELECT * FROM "V_STORE_REVENUE";
+
+SELECT * FROM "NAVEEN"."SALES"."TD_STORE_REVENUE";--OCT1 ST --STATIC
+
+CREATE TASK TSK_SR_LOAD
+WAREHOUSE = NAVEEN_WH
+SCHEDULE = '5 MINUTE'
+AS 
+INSERT INTO "NAVEEN"."SALES"."TD_STORE_REVENUE"
+SELECT * FROM "STORE_REVENUE";
+
+ALTER TASK TSK_SR_LOAD RESUME ;
+
+
+CREATE MATERIALIZED VIEW "MV_STORE_REVENUE" AS
+SELECT * FROM "NAVEEN"."SALES"."TD_STORE_REVENUE";
+
+
+----Table Function----
+CREATE TABLE album (
+  id INTEGER PRIMARY KEY,
+  title NVARCHAR(255),
+  artist NVARCHAR(255),
+  label NVARCHAR(255),
+  released NVARCHAR(255)
+);
+
+CREATE TABLE TRACK (
+  id INTEGER PRIMARY KEY,
+  album_id INTEGER,
+  title NVARCHAR(255) DEFAULT NULL,
+  track_number INTEGER DEFAULT NULL,
+  duration INTEGER DEFAULT NULL
+);
+
+
+CREATE FUNCTION F_TRACKS( )
+RETURNS TABLE (
+artist NVARCHAR(255),
+album NVARCHAR(255),
+track NVARCHAR(255),
+trackno INTEGER,
+m DECIMAL,
+s INTEGER
+)
+AS
+'SELECT a.artist AS artist,
+    a.title AS album,
+    t.title AS track,
+    t.track_number AS trackno,
+    t.duration / 60 AS m,
+    MOD(t.duration,60) AS s
+  FROM TRACK AS t
+  INNER JOIN ALBUM AS a
+  ON a.id = t.album_id'
+;
+
+SELECT * FROM TABLE(F_TRACKS( ));
+
+
+--------------------------------UDF --------------
+
+create function FULLMONTHNAME (v_input string)
+returns string                               
+as                                        
+$$                               
+select case when v_input = 'Jan' then 'January' when v_input = 'Feb' then 'February'
+  when v_input = 'Mar' then 'March' when v_input = 'Apr' then 'April'
+  when v_input = 'May' then 'May' when v_input = 'Jun' then 'June'
+  when v_input = 'Jul' then 'July' when v_input = 'Aug' then 'August'
+  when v_input = 'Sep' then 'September' when v_input = 'Oct' then 'October'
+  when v_input = 'Nov' then 'November' when v_input = 'Dec' then 'December'
+end
+from (select v_input as v_input from dual)
+$$ 
+;
+
+SELECT FULLMONTHNAME('Jan') from dual;
+
+
+------------------------------------procedure --------------------------
+
+
+CREATE OR REPLACE PROCEDURE NAVEEN.SALES.LOAD_EMPLOYEES_DATA_JAVA("TODAY_DATE" VARCHAR)
+RETURNS VARCHAR
+LANGUAGE JAVASCRIPT
+EXECUTE AS OWNER
+AS '
+    var sql_command = ''INSERT INTO EMPLOYEES(LOAD_TIME) VALUES(:1);''
+    
+    snowflake.execute(
+        { 
+        sqlText: sql_command, 
+        binds: [TODAY_DATE] 
+        }
+        ); 
+  return "SUCCEEDED"; 
+  ';
+  
+  
+----------------------------SQL Based Proc------------------------
+create or replace procedure NAVEEN.SALES.LOAD_EMPLOYEES_DATA_SQL()
+returns varchar 
+language sql
+EXECUTE AS OWNER
+as
+$$
+BEGIN
+SELECT * FROM "NAVEEN"."SALES"."EMPLOYEES";
+END;
+$$;
+
+--------------SEQUENCE-------------------
+
+CREATE OR REPLACE SEQUENCE sequence1 
+start = 1 
+INCREMENT = 1 
+comment = 'this sequence will be used to generate employee IDs';
+
+select * from "DEMO_DB"."INFORMATION_SCHEMA"."SEQUENCES";
+
+show sequences;
+
+create or replace table employees(employee_id1 integer,
+                     employee_id number,
+                     empl_join_date date,
+                     dept varchar(10),
+                     salary number,
+                     manager_id number);
+                                 
+insert into employees values(sequence1.nextval, 1,'2014-10-01','HR',40000,4),
+                                 (sequence1.nextval, 2,'2014-09-01','Tech',50000,9),
+                                 (sequence1.nextval, 3,'2018-09-01','Marketing',30000,5),
+                                 (sequence1.nextval, 4,'2017-09-01','HR',10000,5),
+                                 (sequence1.nextval, 5,'2019-09-01','HR',35000,9),
+                                 (sequence1.nextval, 6,'2015-09-01','Tech',90000,4),
+                                 (sequence1.nextval, 3,'2018-09-01','Marketing',30000,5),
+                                 (sequence1.nextval, 7,'2016-09-01','Marketing',20000,1);
+
+select * from employees;
+
+-- verify what next value of sequence will be
+show sequences;
+
+
+// Better solution:
+CREATE OR REPLACE SEQUENCE sequence2
+start = 1 
+INCREMENT = 1 
+comment = 'will be used to generate sequential numbers';
+
+create or replace table employees(employee_id1 integer default sequence2.nextval,
+                     employee_id number,
+                     empl_join_date date,
+                     dept varchar(10),
+                     salary number,
+                     manager_id number);
+
+insert into employees (employee_id, empl_join_date, dept, salary, manager_id) 
+                           values(1,'2014-10-01','HR',40000,4),
+                                 (2,'2014-09-01','Tech',50000,9),
+                                 (3,'2018-09-01','Marketing',30000,5),
+                                 (4,'2017-09-01','HR',10000,5),
+                                 (5,'2019-09-01','HR',35000,9),
+                                 (6,'2015-09-01','Tech',90000,4),
+                                 (3,'2018-09-01','Marketing',30000,5),
+                                 (7,'2016-09-01','Marketing',20000,1);
+                                 
+select * from employees;
