@@ -1,0 +1,113 @@
+select LAST_EXECUTION_TIMESTAMP as TMSTMP, USER_NAME,TOTAL_EXECUTION_MEMORY_SIZE,
+MIN_EXECUTION_MEMORY_SIZE,MAX_EXECUTION_MEMORY_SIZE,STATEMENT_STRING, *
+FROM "PUBLIC"."M_SQL_PLAN_CACHE"
+WHERE UPPER(STATEMENT_STRING) LIKE '%PRODUCT_TAXONOMY%' and to_date(current_date)= to_date(LAST_EXECUTION_TIMESTAMP) 
+and user_name = 'CONTENT_MIGRATION'
+order by LAST_EXECUTION_TIMESTAMP desc;
+
+
+****EXPLAIN PLAN******
+EXPLAIN PLAN SET statement_name = 'TOP5 QUERY' FOR 
+SELECT TOP 5 * FROM "MORE2"."ORDERS" WHERE STORE_ID = 'STR001'
+ORDER BY QUANTITY;
+
+
+SELECT * FROM EXPLAIN_PLAN_TABLE;  
+
+---------------------------
+distinct,
+--------------------------
+inline statements:
+SELECT 
+a.EMPNO,
+a.ENAME,
+a.MGR,
+(SELECT SUM(SAL) FROM "SANTOSH"."EMPLOYEE"."EMP_TABLE" WHERE MGR = a.MGR) MGR_SAL,
+a.SAL EMP_SAL
+FROM "SANTOSH"."EMPLOYEE"."EMP_TABLE" a;
+-----------------------------
+not:
+
+<>
+!=
+NOT IN
+NOT LIKE
+NOT GREATER THAN
+NOT LESS THAN
+
+---------------------------------
+subqueries and Corelated sub queries
+---Corelated sub query
+SELECT * FROM "SANTOSH"."EMPLOYEE"."EMP_TABLE" a
+WHERE a.DEPTNO in
+(SELECT DEPTNO FROM "SANTOSH"."EMPLOYEE"."EMP_TABLE"
+WHERE MGR = a.MGR );
+
+--Sub query 
+SELECT * FROM "SANTOSH"."EMPLOYEE"."EMP_TABLE" a
+WHERE a.DEPTNO in
+(SELECT DEPTNO FROM "SANTOSH"."EMPLOYEE"."EMP_TABLE"
+WHERE MGR = '7902');
+
+--------------------------------------
+Select fields instead of * - REQUIRED COLUMNS 
+
+More usage:
+(
+Selecting from large tables (>1,000,000 records)
+Cartesian Joins or CROSS JOINs
+Looping statements
+SELECT DISTINCT statements
+Nested subqueries
+Wildcard searches in long text or memo fields LIKE '_GHJ%'
+Multiple schema queries
+)
+
+
+
+
+
+
+                 
+
+
+
+
+
+
+
+
+
+best practises
+
+Reduce Complexity of SQL Statements: 
+Break up a complex SQL statement into many simpler ones
+
+Identify Common Sub-Expressions: 
+If you split a complex query into logical sub queries it can help the optimizer to identify common sub expressions and to derive more efficient execution plans.
+
+
+Multi-Level-Aggregation: 
+In the special case of multi-level aggregations, SQLScript can exploit results at a finer grouping for computing coarser aggregations and return the different granularities of groups in distinct table variables. This could save the client the effort of reexamining the query result.
+
+Understand the Costs of Statements: 
+Employ the explain plan facility to investigate the performance impact of different SQL queries.
+
+Exploit Underlying Engine: 
+SQLScript can exploit the specific capabilities of the OLAP- and JOIN-Engine by relying on views modeled appropriately.
+
+Reduce Dependencies: 
+As SQLScript is translated into a dataflow graph, and independent paths in this graph can be executed in parallel, 
+reducing dependencies enables better parallelism, and thus better performance.
+
+Avoid Mixing Calculation Engine Plan Operators and SQL Queries: 
+Mixing calculation engine plan operators and SQL may lead to missed opportunities to apply optimizations as calculation engine plan operators and SQL statements are optimized independently.
+
+Avoid Using Cursors: 
+Check if use of cursors can be replaced by (a flow of) SQL statements for better opportunities for optimization and exploiting parallel execution.
+
+Avoid Using Dynamic SQL: 
+Executing dynamic SQL is slow because compile time checks and query optimization must be done for every invocation of the procedure. 
+Another related problem is security because constructing SQL statements without proper checks of the variables used may harm security.
+
+

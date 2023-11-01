@@ -1,0 +1,346 @@
+Script used:
+
+--Ganerating row number 
+
+SELECT row_number() over(ORDER BY prod.productid) rownum, cat.CategoryName,prod.ProductName
+FROM Categories cat
+INNER JOIN products prod ON cat.CategoryID=prod.CategoryID
+
+---Ganerating row number partition by category id
+SELECT  ROW_NUMBER() over(PARTITION BY cat.categoryid ORDER BY prod.productid) ProductWiseRowNum,
+row_number() over(ORDER BY (SELECT 1)) rownum, cat.CategoryName,prod.ProductName
+FROM Categories cat
+INNER JOIN products prod ON cat.CategoryID=prod.CategoryID
+
+--Dense rank (will have all values) and Rank (skip the values)
+SELECT dense_rank() over(ORDER BY cat.categoryid) CategoryWiseRowNum,cat.CategoryName,
+       ROW_NUMBER() over(PARTITION BY cat.categoryid ORDER BY prod.productid) ProductWiseRowNum,prod.ProductName
+FROM Categories cat
+INNER JOIN products prod ON cat.CategoryID=prod.CategoryID
+
+--total amount by product name
+SELECT prod.ProductName,
+       sum(ord.Quantity*ord.UnitPrice) [TotalAmout]
+FROM [Order Details] ord
+INNER JOIN Products prod ON ord.ProductID=prod.ProductID
+GROUP BY prod.ProductName 
+
+--Running totals - Aggregation with product name
+
+SELECT productname,
+       TotalAmout,
+       sum([TotalAmout]) OVER(ORDER BY productname) AS RunningTotal
+FROM
+  (SELECT prod.ProductName,
+          sum(ord.Quantity*ord.UnitPrice) [TotalAmout]
+   FROM [Order Details] ord
+   INNER JOIN Products prod ON ord.ProductID=prod.ProductID
+   GROUP BY prod.ProductName) t
+
+--Running total by category wise
+SELECT cat.CategoryName,
+       productname,
+       TotalAmout,
+       sum([TotalAmout]) over(PARTITION BY cat.categoryid
+                              ORDER BY productname) AS RunningTotal
+FROM
+  (SELECT prod.CategoryID,
+          prod.ProductName,
+          sum(ord.Quantity*ord.UnitPrice) [TotalAmout]
+   FROM [Order Details] ord
+   INNER JOIN Products prod ON ord.ProductID=prod.ProductID
+   GROUP BY prod.ProductName,
+            prod.CategoryID) t
+INNER JOIN Categories cat ON t.CategoryID=cat.CategoryID
+
+--Lead and Lag
+SELECT cust.CustomerID,
+       cust.CompanyName,
+       ord.OrderDate,
+       LEAD(ord.OrderDate) over(PARTITION BY cust.companyname
+                                ORDER BY ord.orderdate) [NextOrderDate],
+       LAG(ord.OrderDate) over(PARTITION BY cust.companyname
+                                ORDER BY ord.orderdate) [PreviousOrderDate]
+FROM orders ord
+INNER JOIN Customers cust ON ord.CustomerID=cust.CustomerID 
+
+----------
+WITH 
+CTE AS
+  (SELECT cust.CustomerID,
+          cust.CompanyName,
+          ord.OrderDate,
+          LEAD(ord.OrderDate) over(PARTITION BY cust.companyname
+                                   ORDER BY ord.orderdate) [NextOrderDate],
+                              LAG(ord.OrderDate) over(PARTITION BY cust.companyname
+                                                      ORDER BY ord.orderdate) [PreviousOrderDate]
+   FROM orders ord
+   INNER JOIN Customers cust ON ord.CustomerID=cust.CustomerID)
+SELECT CustomerID,
+       CompanyName,
+       ISNULL(DATEDIFF(dd,OrderDate,isnull(NextOrderDate,OrderDate)),0) [NextDateDifference],
+       ISNULL(DATEDIFF(dd,isnull(PreviousOrderDate,OrderDate),OrderDate),0) [PreviousDateDifference],
+       OrderDate,
+       NextOrderDate,
+       PreviousOrderDate
+FROM CTE
+
+
+--select DATEDIFF(dd,'1997-08-25 00:00:00.000','1997-10-03 00:00:00.000')
+
+--Paging
+SELECT *
+   FROM orders ord
+ ORDER BY ord.orderid
+OFFSET 20 ROWS
+FETCH NEXT 10 ROWS ONLY
+
+--First_value and Last_Value
+SELECT cust.CustomerID,
+       cust.CompanyName,
+       ord.OrderDate,
+       First_Value(ord.OrderDate) over(PARTITION BY cust.companyname
+                                ORDER BY (select 1)) [FirstOrderDate],
+       Last_Value(ord.OrderDate) over(PARTITION BY cust.companyname
+                                ORDER BY (select 1)) [LastOrderDate]
+FROM orders ord
+INNER JOIN Customers cust ON ord.CustomerID=cust.CustomerID 
+
+-------------
+
+WITH CTE AS
+  (SELECT cust.CustomerID,
+          cust.CompanyName,
+          ord.OrderDate,
+          LEAD(ord.OrderDate) over(PARTITION BY cust.companyname ORDER BY ord.orderdate) [NextOrderDate],
+          LAG(ord.OrderDate) over(PARTITION BY cust.companyname ORDER BY ord.orderdate) [PreviousOrderDate]
+   FROM orders ord
+   INNER JOIN Customers cust ON ord.CustomerID=cust.CustomerID)
+,
+CTE2
+AS(
+SELECT CustomerID,CompanyName,AVG(NextDateDifference) [AvgDiff] 
+,IIF(AVG(NextDateDifference)<30,'1',IIF(AVG(NextDateDifference)>=30 and AVG(NextDateDifference)<90,'2',
+IIF(AVG(NextDateDifference)>=90,'3','4'))) AS [Tag]
+ FROM (SELECT CustomerID,
+       CompanyName,
+       ISNULL(DATEDIFF(dd,OrderDate,isnull(NextOrderDate,OrderDate)),0) [NextDateDifference],
+       ISNULL(DATEDIFF(dd,isnull(PreviousOrderDate,OrderDate),OrderDate),0) [PreviousDateDifference],
+       OrderDate,
+       NextOrderDate,
+       PreviousOrderDate FROM CTE) t
+GROUP BY CustomerID,CompanyName
+) 
+SELECT customerid,CompanyName,AvgDiff,
+CHOOSE([Tag],'Important','Recommended','Normal','Ignore') [Flag]
+ from CTE2
+
+
+--Second Highest Salary
+select * from EMPLOYEES order by salary desc limit 1 offset 1;
+
+select * from PRASAD.SCHEMA.EMPLOYEES order by salary desc 
+OFFSET 1 ROWS
+FETCH NEXT 1 ROWS ONLY;
+
+select * from 
+(
+select row_number() over (order by salary desc) as row_num ,* from EMPLOYEES
+)
+where row_num =2;
+
+--Second Highest Salary Department Wise
+WITH 
+DepartmentWiseSalary AS
+(
+SELECT *,DENSE_RANK() OVER(PARTITION BY Department ORDER BY Salary DESC) AS RowNum
+FROM Employee
+)
+SELECT    * 
+FROM DepartmentWiseSalary
+WHERE RowNum = 2;
+
+--Finding Duplicates Record
+select * from (
+select *, row_number() over (partition by employee order by salary desc) as row_num from PRASAD.SCHEMA.EMPLOYEES
+where employee in (
+select employee from 
+(select employee,count(*) from PRASAD.SCHEMA.EMPLOYEES
+group by employee
+having count(*) > 1
+)
+)
+)
+where row_num = 1;
+
+WITH CNT AS 
+(
+select employee from (select employee,count(*) from PRASAD.SCHEMA.EMPLOYEES
+group by employee
+having count(*) > 1)
+),
+EMP AS (select *, row_number() over (partition by employee order by salary desc) as row_num from PRASAD.SCHEMA.EMPLOYEES where employee in (SELECT employee from CNT))
+SELECT * FROM EMP WHERE row_num = 2;
+
+--Delete duplicate rows
+Delete FROM Student WHERE ROWID <> (Select max (rowid) from Student b where rollno=b.rollno);
+
+WITH CNT AS 
+(
+select employee from (select employee,count(*) from PRASAD.SCHEMA.EMPLOYEES
+group by employee
+having count(*) > 1)
+),
+EMP AS 
+(select *, row_number() over (partition by employee order by salary desc) as row_num from PRASAD.SCHEMA.EMPLOYEES where employee in (SELECT employee from CNT)
+),
+dup_rows as 
+(
+SELECT employee FROM EMP WHERE row_num = 2
+)
+
+delete from employee where employee in (select employee from dup_rows);
+
+-------
+select * from EMPLOYEES
+minus
+select * from EMPLOYEE_C;
+
+select * from EMPLOYEES
+intersect
+select * from EMPLOYEE_C;
+
+
+--PIVOT Count of employee joining as per YEAR
+
+create or replace table monthly_sales(empid int, amount int, month text)
+    as select * from values
+    (1, 10000, 'JAN'),
+    (1, 400, 'JAN'),
+    (2, 4500, 'JAN'),
+    (2, 35000, 'JAN'),
+    (1, 5000, 'FEB'),
+    (1, 3000, 'FEB'),
+    (2, 200, 'FEB'),
+    (2, 90500, 'FEB'),
+    (1, 6000, 'MAR'),
+    (1, 5000, 'MAR'),
+    (2, 2500, 'MAR'),
+    (2, 9500, 'MAR'),
+    (1, 8000, 'APR'),
+    (1, 10000, 'APR'),
+    (2, 800, 'APR'),
+    (2, 4500, 'APR');
+
+
+select * from PRASAD.SCHEMA.MONTHLY_SALES;
+
+select * 
+  from monthly_sales
+    pivot(sum(amount) for month in ('JAN', 'FEB', 'MAR', 'APR'))
+      as p
+  order by empid;
+  
+
+SELECT    *
+FROM    
+        (
+          SELECT    Department,
+                    YEAR(DOJ) AS [Year],
+                    COUNT(EmpId) AS [EmployeeCount]
+          FROM        Employee
+          GROUP BY    Department, YEAR(DOJ)
+        ) TT
+        PIVOT 
+        (
+              SUM([EmployeeCount])
+              FOR [Year] IN ([2006],[2007],[2008],[2009],[2010],[2011])
+        ) PT
+
+
+--fetch first record and fetch last record from the table?
+
+SELECT * FROM (
+select row_number() over (order by salary desc) as row_num ,* from EMPLOYEES
+)
+WHERE row_num = 1 
+
+
+with CNT AS (select row_number() over (order by salary desc) as row_num ,* from EMPLOYEES),
+MAX AS (SELECT MAX(ROW_NUM) max_row_num FROM CNT)
+SELECT * FROM CNT
+WHERE ROW_NUM = (SELECT MAX_ROW_NUM FROM MAX);
+
+--FIRST 5 ROWS
+SELECT * FROM (
+select row_number() over (order by salary desc) as row_num ,* from EMPLOYEES
+)
+WHERE row_num <=5 
+
+--LAST 5 ROWS
+
+with CNT AS (select row_number() over (order by salary desc) as row_num ,* from EMPLOYEES),
+MAX AS (SELECT MAX(ROW_NUM) max_row_num FROM CNT)
+SELECT * FROM CNT
+WHERE ROW_NUM BETWEEN (SELECT MAX_ROW_NUM - 5 FROM MAX) AND (SELECT MAX_ROW_NUM FROM MAX) ;
+
+--How to fetch 3rd highest salary using Rank Function?
+
+select * from 
+(
+Select Dense_Rank() over ( order by  salary desc) as Rnk,E.* from Employee E
+) where Rnk=3;
+
+--Display first 50% records from Employee table?
+
+with CNT AS (select row_number() over (order by salary desc) as row_num ,* from EMPLOYEES),
+MAX AS (SELECT COUNT(*)/2 max_row_num FROM CNT)
+SELECT * FROM CNT
+WHERE ROW_NUM <= SELECT max_row_num FROM MAX;
+
+
+--How to get distinct records from the table without using distinct keyword.
+
+select * from 
+(
+select row_number() over (partition by employeeid ) as row_num ,* from EMPLOYEES
+)
+where row_num = 1;
+
+
+--To display MAD as
+M
+A
+D
+
+select SUBSTR('MAD' ,1,1) FROM DUAL
+UNION
+select SUBSTR('MAD' ,2,1) FROM DUAL
+UNION
+select SUBSTR('MAD' ,3,1) FROM DUAL
+
+
+--Optimize Below Query
+SELECT        * 
+FROM        Student AS S
+WHERE        DOB IN
+            (
+                SELECT        MAX(DOB)
+                FROM        Student sp
+                WHERE        YEAR(S.DOB) = YEAR(sp.DOB)
+                GROUP BY    YEAR(sp.DOB)
+            ) 
+ORDER BY    DOB
+
+--Optimized Query
+WITH CTE
+AS
+(
+SELECT        YEAR(DOB) [Year],max(DOB) [DOB]
+                FROM        Student sp
+                GROUP BY YEAR(DOB)
+)
+SELECT        * 
+FROM        Student AS S
+join CTE ON        s.DOB =CTE.DOB
+        

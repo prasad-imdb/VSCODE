@@ -1,0 +1,510 @@
+PROCEDURE "SUPPORTTOOLS_RT"."SUPPORTTOOLS.STOREDPROCEDURES::USP_TIMEZONEBLOWUP"  
+(IN IN_TIMEZONE  varchar(10)) 
+LANGUAGE SQLSCRIPT 
+AS
+BEGIN
+	/*********************************************************************************
+	* Procedure  Name            :     USP_TIMEZONEBLOWUP    
+	* Development Request # :    	   TimeZone Blowup
+	* Date Created               :     08/10/2018
+	* Developed By               :     Prasad Boddu
+	* Brief Description          :    This procedure generates blowup the records into each timezone that we report.
+	* -------------------------------------------------------------------------------------------------------------------------------
+	* REVISION HISTORY:
+	*--------------------------------------------------------------------------------------------------------------------------------
+	* CR#                 Date Modified           Modified By        Brief Description of Change 
+	* -                          -                    -                          - 
+	* STRY1544844		  07-02-2019			  Prasad Boddu       From exception table,Refer UAvailable,Name and UType to 
+	*																 to derive In Service TSE Resources
+	**********************************************************************************/
+  
+  
+	 declare v_starttime timestamp;
+	 declare v_min_starttime timestamp;
+	 declare v_max_starttime timestamp;
+	 declare v_endtime  timestamp;
+	 declare v_min_endtime  timestamp;
+	 declare v_max_endtime  timestamp;
+	 declare v_flag CHAR(1);
+	 
+	 declare v_loop_endtime  timestamp;
+	 declare v_loop_starttime  timestamp;
+	 declare v_loop_maxstarttime  timestamp;
+ 
+ DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+       INSERT INTO "STAGING"."EXCEPTIONS"("SCHEMA", "STORED_PROCEDURE", "ERROR_CODE", "ERROR_MSG", "TIME_STAMP", "RESOLVED")
+        VALUES('SUPPORTTOOLS_RT', 'USP_TIMEZONEBLOWUP', ::SQL_ERROR_CODE, 'Error message is: ' || ::SQL_ERROR_MESSAGE, CURRENT_TIMESTAMP, 0);
+    END;
+ 	 
+ 	 	IF IN_TIMEZONE = :IN_TIMEZONE THEN 
+    		DELETE FROM "SUPPORTTOOLS_ST"."X_SNC_CALABRIO_CALENDAR_MASHUP"
+			WHERE "TimeZone" = :IN_TIMEZONE and to_date("StartTime") >= add_days(current_date,-60) 
+			AND to_date("StartTime") <= add_days(current_date,100);
+		END IF; 
+ 	 
+ 	 
+	 IF (:IN_TIMEZONE = 'UTC')
+		THEN 
+	    			   	   	
+	    	DECLARE CURSOR c_agent_base_read FOR 	
+				SELECT * FROM 
+				(
+				SELECT
+					c."Date",
+					c."StartTime",
+					c."EndTime",
+					c."Type",
+					c."DvSubType",
+					c."Name" as "SubTypeDetailName",
+					c."UAvailable",
+					c."DvTimeZone",
+					en."EmployeeNumber",
+					c."DvUser",
+					en."Name" as "AgentName",
+					en."FirstName",
+					en."LastName",
+					--REPLACE(SUBSTRING(c."DvTimeZone",INSTR(c."DvTimeZone",'/')+1,LENGTH(c."DvTimeZone")),'_',' ') AS "AgentLocation",
+					s."DvLocation" "AgentLocation", 
+					c."TimeZone",
+					u."DvPrimaryAssignmentGroup",
+					u."URole",
+					s."SysID" as "AgentSysId",
+					s."Active",
+					c."Holiday",
+					c."PspPerInsertDt"	
+				FROM "_SYS_BIC"."BASE_MODELS.SUPPORT_TOOLS/X_SNC_CALABRIO_CALENDAR_BY_TIMEZONE" c
+				LEFT JOIN "_SYS_BIC"."BASE_MODELS.SUPPORT_TOOLS/X_SNC_DISPATCH_USERS" u ON u."SysId" = c."User"
+				LEFT JOIN (select distinct "SysID","FirstName","LastName","Name","Active","Department","Location","DvLocation" from 
+				 "_SYS_BIC"."BASE_MODELS.SUPPORT_TOOLS/SYS_USER"
+				 where "Active" = 1 ) s ON s."SysID" = u."User"
+				LEFT JOIN (select distinct "FirstName","LastName","Name","Department","EmployeeNumber","Location" 
+				from "_SYS_BIC"."BASE_MODELS.SUPPORT_TOOLS/SYS_USER" 
+				WHERE "EmployeeNumber" IS NOT NULL) en ON s."FirstName" = en."FirstName" and s."LastName" = en."LastName"
+				and s."Department" = en."Department" and s."Location" = en."Location" AND s."Name" = en."Name" 
+				WHERE c."TimeZone" = :IN_TIMEZONE AND c."StartTime" >= TO_DATE(ADD_DAYS(CURRENT_DATE,-60))
+				AND c."StartTime" <= TO_DATE(ADD_DAYS(CURRENT_DATE,100)));		
+					
+			FOR cur_row as c_agent_base_read  
+		    DO 
+			   	v_starttime :=  cur_row."StartTime";
+				v_endtime :=  cur_row."EndTime";
+				
+				v_min_starttime := TO_TIMESTAMP( CAST(cur_row."StartTime" AS DATE) ||' 00:00:00', 'YYYY-MM-DD HH24:MI:SS' );
+				v_max_starttime := TO_TIMESTAMP( CAST(cur_row."StartTime" AS DATE) ||' 23:59:59', 'YYYY-MM-DD HH24:MI:SS' );
+				v_min_endtime :=   TO_TIMESTAMP( CAST(cur_row."EndTime" AS DATE) ||' 00:00:00', 'YYYY-MM-DD HH24:MI:SS' );
+				v_max_endtime :=   TO_TIMESTAMP( CAST(cur_row."EndTime" AS DATE) ||' 23:59:59', 'YYYY-MM-DD HH24:MI:SS' );
+							
+				v_loop_endtime := v_endtime;
+				v_loop_starttime := v_starttime;
+				v_loop_maxstarttime	:= v_max_starttime;
+
+				
+				IF ( v_endtime < v_max_starttime)
+				  	THEN
+				  		INSERT INTO "SUPPORTTOOLS_ST"."X_SNC_CALABRIO_CALENDAR_MASHUP" 
+						VALUES (cur_row."Date",:v_starttime,:v_endtime,cur_row."Type",
+						cur_row."DvSubType",cur_row."SubTypeDetailName",cur_row."UAvailable",
+						cur_row."DvTimeZone",cur_row."EmployeeNumber",cur_row."DvUser",
+						cur_row."AgentName",cur_row."FirstName",cur_row."LastName",cur_row."AgentLocation",IN_TIMEZONE,
+						cur_row."DvPrimaryAssignmentGroup",cur_row."URole",cur_row."AgentSysId",cur_row."Active",cur_row."Holiday",cur_row."PspPerInsertDt");				
+				 END IF;
+			 	
+			 	
+				WHILE v_loop_endtime >= v_loop_maxstarttime
+				DO
+				
+					INSERT INTO "SUPPORTTOOLS_ST"."X_SNC_CALABRIO_CALENDAR_MASHUP" 
+					VALUES (cur_row."Date",:v_loop_starttime,:v_loop_maxstarttime,cur_row."Type",
+						cur_row."DvSubType",cur_row."SubTypeDetailName",cur_row."UAvailable",
+						cur_row."DvTimeZone",cur_row."EmployeeNumber",cur_row."DvUser",
+						cur_row."AgentName",cur_row."FirstName",cur_row."LastName",cur_row."AgentLocation",IN_TIMEZONE,
+						cur_row."DvPrimaryAssignmentGroup",cur_row."URole",cur_row."AgentSysId",cur_row."Active",cur_row."Holiday",cur_row."PspPerInsertDt");
+					
+					-- Advance to Next Day Beginning
+					v_loop_starttime := TO_TIMESTAMP( ADD_DAYS(CAST(:v_loop_starttime AS DATE),1) ||' 00:00:00', 'YYYY-MM-DD HH24:MI:SS' );
+					v_loop_maxstarttime := TO_TIMESTAMP( ADD_DAYS(CAST(:v_loop_maxstarttime AS DATE),1) ||' 23:59:59', 'YYYY-MM-DD HH24:MI:SS' );
+			
+				  	IF ( v_loop_maxstarttime > v_loop_endtime) AND (v_loop_starttime<> v_loop_endtime) 
+				  	THEN
+				  		INSERT INTO "SUPPORTTOOLS_ST"."X_SNC_CALABRIO_CALENDAR_MASHUP" 
+						VALUES (cur_row."Date",:v_loop_starttime,:v_loop_endtime,cur_row."Type",
+						cur_row."DvSubType",cur_row."SubTypeDetailName",cur_row."UAvailable",
+						cur_row."DvTimeZone",cur_row."EmployeeNumber",cur_row."DvUser",
+						cur_row."AgentName",cur_row."FirstName",cur_row."LastName",cur_row."AgentLocation",IN_TIMEZONE,
+						cur_row."DvPrimaryAssignmentGroup",cur_row."URole",cur_row."AgentSysId",cur_row."Active",cur_row."Holiday",cur_row."PspPerInsertDt");				
+				 	END IF;
+				END WHILE;
+			END FOR;
+		ELSEIF (:IN_TIMEZONE = 'AEDT')
+			THEN 
+		    			    	
+		    	DECLARE CURSOR c_agent_base_read FOR 	
+					SELECT * FROM 
+					(
+					SELECT
+						c."Date",
+						c."StartTime",
+						c."EndTime",
+						c."Type",
+						c."DvSubType",
+						c."Name" as "SubTypeDetailName",
+						c."UAvailable",
+						c."DvTimeZone",
+						en."EmployeeNumber",
+						c."DvUser",
+						en."Name" as "AgentName",
+						en."FirstName",
+						en."LastName",
+						--REPLACE(SUBSTRING(c."DvTimeZone",INSTR(c."DvTimeZone",'/')+1,LENGTH(c."DvTimeZone")),'_',' ') AS "AgentLocation",
+						s."DvLocation" "AgentLocation", 
+						c."TimeZone",
+						u."DvPrimaryAssignmentGroup",
+						u."URole",
+						s."SysID" as "AgentSysId",
+						s."Active",
+						c."Holiday",
+						c."PspPerInsertDt"	
+					FROM "_SYS_BIC"."BASE_MODELS.SUPPORT_TOOLS/X_SNC_CALABRIO_CALENDAR_BY_TIMEZONE" c
+					LEFT JOIN "_SYS_BIC"."BASE_MODELS.SUPPORT_TOOLS/X_SNC_DISPATCH_USERS" u ON u."SysId" = c."User"
+					LEFT JOIN (select distinct "SysID","FirstName","LastName","Name","Active","Department","Location","DvLocation" from 
+					 "_SYS_BIC"."BASE_MODELS.SUPPORT_TOOLS/SYS_USER"
+					 where "Active" = 1 ) s ON s."SysID" = u."User"
+					LEFT JOIN (select distinct "FirstName","LastName","Name","Department","EmployeeNumber","Location" 
+					from "_SYS_BIC"."BASE_MODELS.SUPPORT_TOOLS/SYS_USER" 
+					WHERE "EmployeeNumber" IS NOT NULL) en ON s."FirstName" = en."FirstName" and s."LastName" = en."LastName"
+					and s."Department" = en."Department" and s."Location" = en."Location" AND s."Name" = en."Name" 
+					WHERE c."TimeZone" = :IN_TIMEZONE AND c."StartTime" >= TO_DATE(ADD_DAYS(CURRENT_DATE,-60))
+					AND c."StartTime" <= TO_DATE(ADD_DAYS(CURRENT_DATE,100)));	
+				
+				FOR cur_row as c_agent_base_read  
+					DO 
+				    v_starttime :=  cur_row."StartTime";
+					v_endtime :=  cur_row."EndTime";
+					
+					v_min_starttime := TO_TIMESTAMP( CAST(cur_row."StartTime" AS DATE) ||' 00:00:00', 'YYYY-MM-DD HH24:MI:SS' );
+					v_max_starttime := TO_TIMESTAMP( CAST(cur_row."StartTime" AS DATE) ||' 23:59:59', 'YYYY-MM-DD HH24:MI:SS' );
+					v_min_endtime :=   TO_TIMESTAMP( CAST(cur_row."EndTime" AS DATE) ||' 00:00:00', 'YYYY-MM-DD HH24:MI:SS' );
+					v_max_endtime :=   TO_TIMESTAMP( CAST(cur_row."EndTime" AS DATE) ||' 23:59:59', 'YYYY-MM-DD HH24:MI:SS' );
+					
+				
+					v_loop_endtime := v_endtime;
+					v_loop_starttime := v_starttime;
+					v_loop_maxstarttime	:= v_max_starttime;
+				
+										
+					IF ( v_endtime < v_max_starttime)
+					  	THEN
+					  		INSERT INTO "SUPPORTTOOLS_ST"."X_SNC_CALABRIO_CALENDAR_MASHUP"
+							VALUES (cur_row."Date",:v_starttime,:v_endtime,cur_row."Type",
+						cur_row."DvSubType",cur_row."SubTypeDetailName",cur_row."UAvailable",
+						cur_row."DvTimeZone",cur_row."EmployeeNumber",cur_row."DvUser",
+						cur_row."AgentName",cur_row."FirstName",cur_row."LastName",cur_row."AgentLocation",IN_TIMEZONE,
+						cur_row."DvPrimaryAssignmentGroup",cur_row."URole",cur_row."AgentSysId",cur_row."Active",cur_row."Holiday",cur_row."PspPerInsertDt");				
+					 	END IF;
+					 	
+					 	
+					WHILE v_loop_endtime >= v_loop_maxstarttime
+					DO
+					
+						INSERT INTO "SUPPORTTOOLS_ST"."X_SNC_CALABRIO_CALENDAR_MASHUP" 
+						VALUES (cur_row."Date",:v_loop_starttime,:v_loop_maxstarttime,cur_row."Type",
+						cur_row."DvSubType",cur_row."SubTypeDetailName",cur_row."UAvailable",
+						cur_row."DvTimeZone",cur_row."EmployeeNumber",cur_row."DvUser",
+						cur_row."AgentName",cur_row."FirstName",cur_row."LastName",cur_row."AgentLocation",IN_TIMEZONE,
+						cur_row."DvPrimaryAssignmentGroup",cur_row."URole",cur_row."AgentSysId",cur_row."Active",cur_row."Holiday",cur_row."PspPerInsertDt");
+						
+						-- Advance to Next Day Beginning
+						v_loop_starttime := TO_TIMESTAMP( ADD_DAYS(CAST(:v_loop_starttime AS DATE),1) ||' 00:00:00', 'YYYY-MM-DD HH24:MI:SS' );
+						v_loop_maxstarttime := TO_TIMESTAMP( ADD_DAYS(CAST(:v_loop_maxstarttime AS DATE),1) ||' 23:59:59', 'YYYY-MM-DD HH24:MI:SS' );
+					
+					  	IF ( v_loop_maxstarttime > v_loop_endtime) AND (v_loop_starttime<> v_loop_endtime) 
+					  	THEN
+					  		INSERT INTO "SUPPORTTOOLS_ST"."X_SNC_CALABRIO_CALENDAR_MASHUP" 
+							VALUES (cur_row."Date",:v_loop_starttime,:v_loop_endtime,cur_row."Type",
+						cur_row."DvSubType",cur_row."SubTypeDetailName",cur_row."UAvailable",
+						cur_row."DvTimeZone",cur_row."EmployeeNumber",cur_row."DvUser",
+						cur_row."AgentName",cur_row."FirstName",cur_row."LastName",cur_row."AgentLocation",IN_TIMEZONE,
+						cur_row."DvPrimaryAssignmentGroup",cur_row."URole",cur_row."AgentSysId",cur_row."Active",cur_row."Holiday",cur_row."PspPerInsertDt");				
+					 	END IF;
+					END WHILE;
+				END FOR;
+		ELSEIF (:IN_TIMEZONE = 'BST')
+			THEN 
+		    	
+		    	DECLARE CURSOR c_agent_base_read FOR 	
+					SELECT * FROM 
+					(
+					SELECT
+						c."Date",
+						c."StartTime",
+						c."EndTime",
+						c."Type",
+						c."DvSubType",
+						c."Name" as "SubTypeDetailName",
+						c."UAvailable",
+						c."DvTimeZone",
+						en."EmployeeNumber",
+						c."DvUser",
+						en."Name" as "AgentName",
+						en."FirstName",
+						en."LastName",
+						--REPLACE(SUBSTRING(c."DvTimeZone",INSTR(c."DvTimeZone",'/')+1,LENGTH(c."DvTimeZone")),'_',' ') AS "AgentLocation",
+						s."DvLocation" "AgentLocation", 
+						c."TimeZone",
+						u."DvPrimaryAssignmentGroup",
+						u."URole",
+						s."SysID" as "AgentSysId",
+						s."Active",
+						c."Holiday",
+						c."PspPerInsertDt"	
+					FROM "_SYS_BIC"."BASE_MODELS.SUPPORT_TOOLS/X_SNC_CALABRIO_CALENDAR_BY_TIMEZONE" c
+					LEFT JOIN "_SYS_BIC"."BASE_MODELS.SUPPORT_TOOLS/X_SNC_DISPATCH_USERS" u ON u."SysId" = c."User"
+					LEFT JOIN (select distinct "SysID","FirstName","LastName","Name","Active","Department","Location","DvLocation" from 
+					 "_SYS_BIC"."BASE_MODELS.SUPPORT_TOOLS/SYS_USER"
+					 where "Active" = 1 ) s ON s."SysID" = u."User"
+					LEFT JOIN (select distinct "FirstName","LastName","Name","Department","EmployeeNumber","Location" 
+					from "_SYS_BIC"."BASE_MODELS.SUPPORT_TOOLS/SYS_USER" 
+					WHERE "EmployeeNumber" IS NOT NULL) en ON s."FirstName" = en."FirstName" and s."LastName" = en."LastName"
+					and s."Department" = en."Department" and s."Location" = en."Location" AND s."Name" = en."Name" 
+					WHERE c."TimeZone" = :IN_TIMEZONE AND c."StartTime" >= TO_DATE(ADD_DAYS(CURRENT_DATE,-60))
+					AND c."StartTime" <= TO_DATE(ADD_DAYS(CURRENT_DATE,100)));	
+				FOR cur_row as c_agent_base_read  
+			 	DO 
+				    v_starttime :=  cur_row."StartTime";
+					v_endtime :=  cur_row."EndTime";
+					
+					v_min_starttime := TO_TIMESTAMP( CAST(cur_row."StartTime" AS DATE) ||' 00:00:00', 'YYYY-MM-DD HH24:MI:SS' );
+					v_max_starttime := TO_TIMESTAMP( CAST(cur_row."StartTime" AS DATE) ||' 23:59:59', 'YYYY-MM-DD HH24:MI:SS' );
+					v_min_endtime :=   TO_TIMESTAMP( CAST(cur_row."EndTime" AS DATE) ||' 00:00:00', 'YYYY-MM-DD HH24:MI:SS' );
+					v_max_endtime :=   TO_TIMESTAMP( CAST(cur_row."EndTime" AS DATE) ||' 23:59:59', 'YYYY-MM-DD HH24:MI:SS' );
+					
+				
+					v_loop_endtime := v_endtime;
+					v_loop_starttime := v_starttime;
+					v_loop_maxstarttime	:= v_max_starttime;
+				
+					
+					--v_endtime = ADD_SECONDS(v_endtime,-1);
+					IF ( v_endtime < v_max_starttime)
+					  	THEN
+					  		INSERT INTO "SUPPORTTOOLS_ST"."X_SNC_CALABRIO_CALENDAR_MASHUP"
+							VALUES (cur_row."Date",:v_starttime,:v_endtime,cur_row."Type",
+						cur_row."DvSubType",cur_row."SubTypeDetailName",cur_row."UAvailable",
+						cur_row."DvTimeZone",cur_row."EmployeeNumber",cur_row."DvUser",
+						cur_row."AgentName",cur_row."FirstName",cur_row."LastName",cur_row."AgentLocation",IN_TIMEZONE,
+						cur_row."DvPrimaryAssignmentGroup",cur_row."URole",cur_row."AgentSysId",cur_row."Active",cur_row."Holiday",cur_row."PspPerInsertDt");				
+					 	END IF;
+				 	
+				 	
+					WHILE v_loop_endtime >= v_loop_maxstarttime
+					DO
+					
+						INSERT INTO "SUPPORTTOOLS_ST"."X_SNC_CALABRIO_CALENDAR_MASHUP"
+						VALUES (cur_row."Date",:v_loop_starttime,:v_loop_maxstarttime,cur_row."Type",
+						cur_row."DvSubType",cur_row."SubTypeDetailName",cur_row."UAvailable",
+						cur_row."DvTimeZone",cur_row."EmployeeNumber",cur_row."DvUser",
+						cur_row."AgentName",cur_row."FirstName",cur_row."LastName",cur_row."AgentLocation",IN_TIMEZONE,
+						cur_row."DvPrimaryAssignmentGroup",cur_row."URole",cur_row."AgentSysId",cur_row."Active",cur_row."Holiday",cur_row."PspPerInsertDt");
+						
+						-- Advance to Next Day Beginning
+						v_loop_starttime := TO_TIMESTAMP( ADD_DAYS(CAST(:v_loop_starttime AS DATE),1) ||' 00:00:00', 'YYYY-MM-DD HH24:MI:SS' );
+						v_loop_maxstarttime := TO_TIMESTAMP( ADD_DAYS(CAST(:v_loop_maxstarttime AS DATE),1) ||' 23:59:59', 'YYYY-MM-DD HH24:MI:SS' );
+						
+					  	IF ( v_loop_maxstarttime > v_loop_endtime) AND (v_loop_starttime<> v_loop_endtime) 
+					  	THEN
+					  		INSERT INTO "SUPPORTTOOLS_ST"."X_SNC_CALABRIO_CALENDAR_MASHUP"
+							VALUES (cur_row."Date",:v_loop_starttime,:v_loop_endtime,cur_row."Type",
+						cur_row."DvSubType",cur_row."SubTypeDetailName",cur_row."UAvailable",
+						cur_row."DvTimeZone",cur_row."EmployeeNumber",cur_row."DvUser",
+						cur_row."AgentName",cur_row."FirstName",cur_row."LastName",cur_row."AgentLocation",IN_TIMEZONE,
+						cur_row."DvPrimaryAssignmentGroup",cur_row."URole",cur_row."AgentSysId",cur_row."Active",cur_row."Holiday",cur_row."PspPerInsertDt");				
+					 	END IF;
+					END WHILE;
+				END FOR;
+		ELSEIF (:IN_TIMEZONE = 'CEST')
+			THEN 
+		    	
+		     	DECLARE CURSOR c_agent_base_read FOR 	
+					SELECT * FROM 
+					(
+					SELECT
+						c."Date",
+						c."StartTime",
+						c."EndTime",
+						c."Type",
+						c."DvSubType",
+						c."Name" as "SubTypeDetailName",
+						c."UAvailable",
+						c."DvTimeZone",
+						en."EmployeeNumber",
+						c."DvUser",
+						en."Name" as "AgentName",
+						en."FirstName",
+						en."LastName",
+						--REPLACE(SUBSTRING(c."DvTimeZone",INSTR(c."DvTimeZone",'/')+1,LENGTH(c."DvTimeZone")),'_',' ') AS "AgentLocation",
+						s."DvLocation" "AgentLocation", 
+						c."TimeZone",
+						u."DvPrimaryAssignmentGroup",
+						u."URole",
+						s."SysID" as "AgentSysId",
+						s."Active",
+						c."Holiday",
+						c."PspPerInsertDt"	
+					FROM "_SYS_BIC"."BASE_MODELS.SUPPORT_TOOLS/X_SNC_CALABRIO_CALENDAR_BY_TIMEZONE" c
+					LEFT JOIN "_SYS_BIC"."BASE_MODELS.SUPPORT_TOOLS/X_SNC_DISPATCH_USERS" u ON u."SysId" = c."User"
+					LEFT JOIN (select distinct "SysID","FirstName","LastName","Name","Active","Department","Location","DvLocation" from 
+					 "_SYS_BIC"."BASE_MODELS.SUPPORT_TOOLS/SYS_USER"
+					 where "Active" = 1 ) s ON s."SysID" = u."User"
+					LEFT JOIN (select distinct "FirstName","LastName","Name","Department","EmployeeNumber","Location" 
+					from "_SYS_BIC"."BASE_MODELS.SUPPORT_TOOLS/SYS_USER" 
+					WHERE "EmployeeNumber" IS NOT NULL) en ON s."FirstName" = en."FirstName" and s."LastName" = en."LastName"
+					and s."Department" = en."Department" and s."Location" = en."Location" AND s."Name" = en."Name" 
+					WHERE c."TimeZone" = :IN_TIMEZONE AND c."StartTime" >= TO_DATE(ADD_DAYS(CURRENT_DATE,-60))
+					AND c."StartTime" <= TO_DATE(ADD_DAYS(CURRENT_DATE,100)));	
+				FOR cur_row as c_agent_base_read  
+			 	DO 
+				    v_starttime :=  cur_row."StartTime";
+					v_endtime :=  cur_row."EndTime";
+					
+					v_min_starttime := TO_TIMESTAMP( CAST(cur_row."StartTime" AS DATE) ||' 00:00:00', 'YYYY-MM-DD HH24:MI:SS' );
+					v_max_starttime := TO_TIMESTAMP( CAST(cur_row."StartTime" AS DATE) ||' 23:59:59', 'YYYY-MM-DD HH24:MI:SS' );
+					v_min_endtime :=   TO_TIMESTAMP( CAST(cur_row."EndTime" AS DATE) ||' 00:00:00', 'YYYY-MM-DD HH24:MI:SS' );
+					v_max_endtime :=   TO_TIMESTAMP( CAST(cur_row."EndTime" AS DATE) ||' 23:59:59', 'YYYY-MM-DD HH24:MI:SS' );
+					
+				
+					v_loop_endtime := v_endtime;
+					v_loop_starttime := v_starttime;
+					v_loop_maxstarttime	:= v_max_starttime;
+
+					--v_endtime = ADD_SECONDS(v_endtime,-1);
+					IF ( v_endtime < v_max_starttime)
+					  	THEN
+					  		INSERT INTO "SUPPORTTOOLS_ST"."X_SNC_CALABRIO_CALENDAR_MASHUP"
+							VALUES (cur_row."Date",:v_starttime,:v_endtime,cur_row."Type",
+						cur_row."DvSubType",cur_row."SubTypeDetailName",cur_row."UAvailable",
+						cur_row."DvTimeZone",cur_row."EmployeeNumber",cur_row."DvUser",
+						cur_row."AgentName",cur_row."FirstName",cur_row."LastName",cur_row."AgentLocation",IN_TIMEZONE,
+						cur_row."DvPrimaryAssignmentGroup",cur_row."URole",cur_row."AgentSysId",cur_row."Active",cur_row."Holiday",cur_row."PspPerInsertDt");				
+					 	END IF;
+					 	
+					 	
+					WHILE v_loop_endtime >= v_loop_maxstarttime
+					DO
+					
+						INSERT INTO "SUPPORTTOOLS_ST"."X_SNC_CALABRIO_CALENDAR_MASHUP" 
+						VALUES (cur_row."Date",:v_loop_starttime,:v_loop_maxstarttime,cur_row."Type",
+						cur_row."DvSubType",cur_row."SubTypeDetailName",cur_row."UAvailable",
+						cur_row."DvTimeZone",cur_row."EmployeeNumber",cur_row."DvUser",
+						cur_row."AgentName",cur_row."FirstName",cur_row."LastName",cur_row."AgentLocation",IN_TIMEZONE,
+						cur_row."DvPrimaryAssignmentGroup",cur_row."URole",cur_row."AgentSysId",cur_row."Active",cur_row."Holiday",cur_row."PspPerInsertDt");
+						
+						-- Advance to Next Day Beginning
+						v_loop_starttime := TO_TIMESTAMP( ADD_DAYS(CAST(:v_loop_starttime AS DATE),1) ||' 00:00:00', 'YYYY-MM-DD HH24:MI:SS' );
+						v_loop_maxstarttime := TO_TIMESTAMP( ADD_DAYS(CAST(:v_loop_maxstarttime AS DATE),1) ||' 23:59:59', 'YYYY-MM-DD HH24:MI:SS' );
+						
+						  	IF ( v_loop_maxstarttime > v_loop_endtime) AND (v_loop_starttime<> v_loop_endtime) 
+						  	THEN
+						  		INSERT INTO "SUPPORTTOOLS_ST"."X_SNC_CALABRIO_CALENDAR_MASHUP" 
+								VALUES (cur_row."Date",:v_loop_starttime,:v_loop_endtime,cur_row."Type",
+						cur_row."DvSubType",cur_row."SubTypeDetailName",cur_row."UAvailable",
+						cur_row."DvTimeZone",cur_row."EmployeeNumber",cur_row."DvUser",
+						cur_row."AgentName",cur_row."FirstName",cur_row."LastName",cur_row."AgentLocation",IN_TIMEZONE,
+						cur_row."DvPrimaryAssignmentGroup",cur_row."URole",cur_row."AgentSysId",cur_row."Active",cur_row."Holiday",cur_row."PspPerInsertDt");				
+						 	END IF;
+					END WHILE;
+				END FOR; 
+		ELSE
+			
+			DECLARE CURSOR c_agent_base_read FOR 
+				SELECT * FROM 
+				(
+				SELECT
+					c."Date",
+					c."StartTime",
+					c."EndTime",
+					c."Type",
+					c."DvSubType",
+					c."Name" as "SubTypeDetailName",
+					c."UAvailable",
+					c."DvTimeZone",
+					en."EmployeeNumber",
+					c."DvUser",
+					en."Name" as "AgentName",
+					en."FirstName",
+					en."LastName",
+					--REPLACE(SUBSTRING(c."DvTimeZone",INSTR(c."DvTimeZone",'/')+1,LENGTH(c."DvTimeZone")),'_',' ') AS "AgentLocation",
+					s."DvLocation" "AgentLocation", 
+					c."TimeZone",
+					u."DvPrimaryAssignmentGroup",
+					u."URole",
+					s."SysID" as "AgentSysId",
+					s."Active",
+					c."Holiday",
+					c."PspPerInsertDt"	
+				FROM "_SYS_BIC"."BASE_MODELS.SUPPORT_TOOLS/X_SNC_CALABRIO_CALENDAR_BY_TIMEZONE" c
+				LEFT JOIN "_SYS_BIC"."BASE_MODELS.SUPPORT_TOOLS/X_SNC_DISPATCH_USERS" u ON u."SysId" = c."User"
+				LEFT JOIN (select distinct "SysID","FirstName","LastName","Name","Active","Department","Location","DvLocation" from 
+				 "_SYS_BIC"."BASE_MODELS.SUPPORT_TOOLS/SYS_USER"
+				 where "Active" = 1 ) s ON s."SysID" = u."User"
+				LEFT JOIN (select distinct "FirstName","LastName","Name","Department","EmployeeNumber","Location" 
+				from "_SYS_BIC"."BASE_MODELS.SUPPORT_TOOLS/SYS_USER" 
+				WHERE "EmployeeNumber" IS NOT NULL) en ON s."FirstName" = en."FirstName" and s."LastName" = en."LastName"
+				and s."Department" = en."Department" and s."Location" = en."Location" AND s."Name" = en."Name" 
+				WHERE c."TimeZone" = :IN_TIMEZONE AND c."StartTime" >= TO_DATE(ADD_DAYS(CURRENT_DATE,-60))
+				AND c."StartTime" <= TO_DATE(ADD_DAYS(CURRENT_DATE,100)));				
+			FOR cur_row as c_agent_base_read  
+		 	DO 
+			    v_starttime :=  cur_row."StartTime";
+				v_endtime :=  cur_row."EndTime";
+				
+				v_min_starttime := TO_TIMESTAMP( CAST(cur_row."StartTime" AS DATE) ||' 00:00:00', 'YYYY-MM-DD HH24:MI:SS' );
+				v_max_starttime := TO_TIMESTAMP( CAST(cur_row."StartTime" AS DATE) ||' 23:59:59', 'YYYY-MM-DD HH24:MI:SS' );
+				v_min_endtime :=   TO_TIMESTAMP( CAST(cur_row."EndTime" AS DATE) ||' 00:00:00', 'YYYY-MM-DD HH24:MI:SS' );
+				v_max_endtime :=   TO_TIMESTAMP( CAST(cur_row."EndTime" AS DATE) ||' 23:59:59', 'YYYY-MM-DD HH24:MI:SS' );
+				
+			
+				v_loop_endtime := v_endtime;
+				v_loop_starttime := v_starttime;
+				v_loop_maxstarttime	:= v_max_starttime;
+				
+							
+				--v_endtime = ADD_SECONDS(v_endtime,-1);
+				IF ( v_endtime < v_max_starttime)
+				  	THEN
+				  		INSERT INTO "SUPPORTTOOLS_ST"."X_SNC_CALABRIO_CALENDAR_MASHUP" 
+						VALUES (cur_row."Date",:v_starttime,:v_endtime,cur_row."Type",
+						cur_row."DvSubType",cur_row."SubTypeDetailName",cur_row."UAvailable",
+						cur_row."DvTimeZone",cur_row."EmployeeNumber",cur_row."DvUser",
+						cur_row."AgentName",cur_row."FirstName",cur_row."LastName",cur_row."AgentLocation",IN_TIMEZONE,
+						cur_row."DvPrimaryAssignmentGroup",cur_row."URole",cur_row."AgentSysId",cur_row."Active",cur_row."Holiday",cur_row."PspPerInsertDt");				
+				 	END IF;
+				 	
+			 	
+				WHILE v_loop_endtime >= v_loop_maxstarttime
+				DO
+				
+					INSERT INTO "SUPPORTTOOLS_ST"."X_SNC_CALABRIO_CALENDAR_MASHUP"  
+					VALUES (cur_row."Date",:v_loop_starttime,:v_loop_maxstarttime,cur_row."Type",
+						cur_row."DvSubType",cur_row."SubTypeDetailName",cur_row."UAvailable",
+						cur_row."DvTimeZone",cur_row."EmployeeNumber",cur_row."DvUser",
+						cur_row."AgentName",cur_row."FirstName",cur_row."LastName",cur_row."AgentLocation",IN_TIMEZONE,
+						cur_row."DvPrimaryAssignmentGroup",cur_row."URole",cur_row."AgentSysId",cur_row."Active",cur_row."Holiday",cur_row."PspPerInsertDt");
+					
+					-- Advance to Next Day Beginning
+					v_loop_starttime := TO_TIMESTAMP( ADD_DAYS(CAST(:v_loop_starttime AS DATE),1) ||' 00:00:00', 'YYYY-MM-DD HH24:MI:SS' );
+					v_loop_maxstarttime := TO_TIMESTAMP( ADD_DAYS(CAST(:v_loop_maxstarttime AS DATE),1) ||' 23:59:59', 'YYYY-MM-DD HH24:MI:SS' );
+					
+					  	IF ( v_loop_maxstarttime > v_loop_endtime) AND (v_loop_starttime<> v_loop_endtime) 
+					  	THEN
+					  		INSERT INTO "SUPPORTTOOLS_ST"."X_SNC_CALABRIO_CALENDAR_MASHUP" 
+							VALUES (cur_row."Date",:v_loop_starttime,:v_loop_endtime,cur_row."Type",
+						cur_row."DvSubType",cur_row."SubTypeDetailName",cur_row."UAvailable",
+						cur_row."DvTimeZone",cur_row."EmployeeNumber",cur_row."DvUser",
+						cur_row."AgentName",cur_row."FirstName",cur_row."LastName",cur_row."AgentLocation",IN_TIMEZONE,
+						cur_row."DvPrimaryAssignmentGroup",cur_row."URole",cur_row."AgentSysId",cur_row."Active",cur_row."Holiday",cur_row."PspPerInsertDt");				
+					 	END IF;
+				END WHILE;
+			END FOR; 
+	END IF;
+END;

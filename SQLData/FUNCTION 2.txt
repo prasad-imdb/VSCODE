@@ -1,0 +1,376 @@
+FUNCTION "HI_RT"."TECH_SUPPORT.TABLEFUNCTIONS::CS_KCS_KBM_CASES" ( ) 
+ /*********************************************************************************
+    * Function Name  : "HI_RT"."TECH_SUPPORT.TABLEFUNCTIONS::CS_KCS_KBM_CASES" 
+    * Development Request # : 
+    * Date Created  : 2019-06-18
+    * Developed By  : Prasad Boddu
+    * Brief Description :  
+    * --------------------------------------------------------------------------------------------------------------------------
+    * REVISION HISTORY:
+    *---------------------------------------------------------------------------------------------------------------------------
+    * 04032020 added TS Parent and Location 
+    **********************************************************************************/
+
+RETURNS TABLE (
+"IncidentNumber" NVARCHAR(55),
+"CaseNumber" NVARCHAR(55),
+"MonthYearOfClosedAt" NVARCHAR(55),
+"RowNumber4KB" INTEGER,
+"RowNumber4Int" INTEGER,
+"Created" TIMESTAMP,
+"Priority" NVARCHAR(55),
+"ClosedAt" TIMESTAMP,
+"QuarterOfClosedAt" NVARCHAR(55),
+"ResolvedAt" TIMESTAMP,
+"1stKBFlag" NVARCHAR(20),
+"KCSTrainedTSE" NVARCHAR(30),
+"AssignmentGroup" NVARCHAR(255),
+"SupportRegion"  NVARCHAR(10),
+"DvLocation" NVARCHAR(255), 
+"TS-Parent" NVARCHAR(255),
+"ProblemID" NVARCHAR(255),
+"PRBFlag" NVARCHAR(10),
+"CompanyCategory" NVARCHAR(100),
+"AssignedTo" NVARCHAR(255),
+"Manager" NVARCHAR(255),
+"ReleaseFamily" NVARCHAR(40),
+"BusinessUnit" NVARCHAR(255),
+"CaseCategory" NVARCHAR(55),
+"Company" NVARCHAR(255),
+"ProblemManagementGroup" NVARCHAR(255),
+"USGFlag" NVARCHAR(55),
+"Skill" NVARCHAR(100),
+"User" NVARCHAR(151),
+"SysCreatedOn" TIMESTAMP,
+"Active" TINYINT,
+"M2MSysCreatedOn" TIMESTAMP,
+"SysCreatedBy" NVARCHAR(40),
+"KnowledgeArticle" NVARCHAR(40),
+"KBKnowledgeBase" NVARCHAR(100),
+"WorkflowState" NVARCHAR(80),
+"Version" NVARCHAR(40),
+"OwnerGroup" NVARCHAR(40),
+"STKEFlag" INTEGER,
+"KBMinCreated" TIMESTAMP,
+"ContactType" NVARCHAR(40),
+"CaseSysCreatedBy" NVARCHAR(40),
+"ReliefTime1" DECIMAL,
+"P1TTSP" DECIMAL,
+"ResolutionTime" DECIMAL(16,6),
+"TTRelief" DECIMAL,
+"TTResolution" DECIMAL,
+"OutageStartTime" TIMESTAMP,
+"ImpactEndTime"  TIMESTAMP,
+"TempReliefFlag" INTEGER,
+"ImpactStartTime"  TIMESTAMP,
+"PotentiallyCausedByUpgrade" NVARCHAR(55),
+"ReliefTime" DECIMAL,
+"KBFlag" NVARCHAR(20),
+"CaseCount4KBMonth" INTEGER,
+"lead" INTEGER,
+"RunningTotal" INTEGER,
+"CaseMonthlyCount" INTEGER,
+"AGCaseMonthlyCount" INTEGER,
+"KBReuseFlag" INTEGER,
+"KBReuseFlag2" INTEGER
+
+)
+LANGUAGE SQLSCRIPT
+SQL SECURITY  INVOKER AS
+
+BEGIN 
+ /*********************************************************************************
+    * Date Created  : 17/2/2019
+    * Developed By  : Prasad Boddu
+    * Brief Description :This function provides KCS related metircs for customer support Team
+    * Project#/Story#   : STRY1542883
+    * --------------------------------------------------------------------------------------------------------------------------
+    * REVISION HISTORY:
+    * CR#                 Date Modified           Modified By        Brief Description of Change 
+    * T1PRJ0148567		  9/04/2019		          Prasad Boddu       as part of the Case Project replaced INCIDENT with EM_CASE_INCIDENT
+    **********************************************************************************/
+CS_KCS_INTS_LEVEL00 =
+select *,
+CASE WHEN "ReliefTime1" < 0 THEN 0 ELSE "ReliefTime1" END AS "ReliefTime"
+from 
+(
+select "IncidentNumber","CaseNumber","MonthYearOfClosedAt",
+ROW_NUMBER() OVER (PARTITION BY "CaseNumber"  ORDER BY "KnowledgeArticle" ASC) AS "RowNumber4KB",
+DENSE_RANK() OVER (PARTITION BY "KnowledgeArticle","MonthYearOfClosedAt"  ORDER BY "CaseNumber" ASC) AS "RowNumber4Int",
+CREATED as "Created",KCS."Priority",KCS."ClosedAt",
+substring(Quarter(KCS."ClosedAt"),3,7) as "QuarterOfClosedAt","ResolvedAt",
+--case when "KnowledgeArticle" is not null then 'KBAttached' when "KnowledgeArticle" is null then 'KBNotAttached' End as "KBFlag",
+case 
+when "KnowledgeArticle" is not null and "SysCreatedBy" <> 'soap.servengmon' then 'KBAttached' 
+when "KnowledgeArticle" is null or ("KnowledgeArticle" is not null and "SysCreatedBy" = 'soap.servengmon')  then 'KBNotAttached' 
+End as "1stKBFlag",
+case when "DvSkill" like 'S&L%' then 'Yes' ELSE 'No' END "KCSTrainedTSE",KCS."DvAssignmentGroup" as "AssignmentGroup",
+CASE  WHEN KCS."DvAssignedTo" IS NULL THEN 'Not Assigned'
+      WHEN KCS."U_COUNTRY" IS NULL THEN 'other'
+      WHEN KCS."U_COUNTRY"='United States of America' OR KCS."U_COUNTRY"= 'US' OR KCS."U_COUNTRY"= 'US - United States'  
+      OR KCS."U_COUNTRY" = 'United States' OR KCS."U_COUNTRY" = 'US' THEN 'AMS'
+      
+      WHEN KCS."U_COUNTRY"='United Kingdom' OR KCS."U_COUNTRY"='UK' OR 
+      KCS."U_COUNTRY" = 'The Netherlands' OR KCS."U_COUNTRY"='Netherlands' OR KCS."U_COUNTRY"='NL' OR 
+      KCS."U_COUNTRY" = 'NL - The Netherlands' OR KCS."U_COUNTRY" = 'GB' OR KCS."U_COUNTRY"= 'Ireland' THEN 'EMEA'
+      
+      WHEN KCS."U_COUNTRY"='AU' OR KCS."U_COUNTRY"='Australia' OR KCS."U_COUNTRY"='Japan' THEN 'APJ'
+      
+      WHEN LOWER(KCS."U_COUNTRY") = 'india' OR LOWER(KCS."U_COUNTRY") = 'in - india' 
+      OR LOWER(KCS."U_COUNTRY") = 'in' THEN 'HYD'
+      
+      ELSE 'other' END AS "SupportRegion",
+ KCS.DV_LOCATION AS "DvLocation",
+ KCS."TS-Parent",
+ KCS."DvProblem" as "ProblemID",
+ case when KCS."DvProblem" is not null then 'Yes' 
+ 	  ELSE 'No' End as "PRBFlag",
+ CASE WHEN "U_MARKETING_STATUS"= 'F2000' THEN 'Global 2k Customer'
+       WHEN "DvAssignmentGroup" = 'CS - SNExpress' THEN 'Express'
+       ELSE 'Enterprise' END AS "CompanyCategory",
+"DvAssignedTo" as "AssignedTo",DV_MANAGER as "Manager",
+SPACK.DV_U_RELEASE_FAMILY as "ReleaseFamily",
+KCS."BusinessUnit",
+KCS."U_NAME" AS "CaseCategory",KCS."DvCompany" as "Company",KCS."ProblemManagementGroup",
+CASE WHEN KCS."USGFlag" = 'Y' THEN 'USG' 
+      WHEN KCS."USGFlag" = 'N' THEN 'Non-USG'
+         END AS "USGFlag",KCS."DvSkill" as "Skill",KCS."DvUser" as "User",KCS."SysCreatedOn" as "SysCreatedOn"
+         ,KCS."Active" as "Active",KCS."M2MSysCreatedOn",KCS."SysCreatedBy",KCS."KnowledgeArticle", 
+         KCS."KBKnowledgeBase",KCS."WorkflowState",KCS."Version",KCS."DvUArticleOwnerGroup" as "OwnerGroup",KCS."STKEFlag",
+         KCS."KBMinCreated",KCS."DvContactType" as "ContactType",KCS."CaseSysCreatedBy",
+CASE WHEN (("CREATED" >= '2019-04-01 00:00:00' OR "ClosedAt" >= '2019-04-01 00:00:00') AND "Priority"='P1 - Severe') 
+ THEN seconds_between ("ImpactStartTime",IFNULL("ImpactEndTime",NOW()))/(60*60*24)
+ ELSE seconds_between ("CREATED",IFNULL("ResolvedAt",NOW()))/(60*60*24)
+ END AS "ReliefTime1",
+CASE WHEN KCS."Priority" = '1 - Severe' 
+ THEN seconds_between ("CREATED",IFNULL("ResolvedAt",NOW()))/(60*60)
+ ELSE NULL END AS "P1TTSP",
+("RESOLUTION_TIME")/86400 AS "ResolutionTime",
+seconds_between ("CREATED",IFNULL("ResolvedAt",NOW()))/(60*60*24) AS "TTRelief",
+seconds_between ("CREATED",IFNULL("ClosedAt",NOW()))/(60*60*24) AS "TTResolution",
+"OutageStartTime",
+"ImpactEndTime",
+"TempReliefFlag",
+"ImpactStartTime",
+KCS."PotentiallyCausedByUpgrade"
+from (
+SELECT A."DvURefIncident" as "IncidentNumber", A."DvUCaseCategory",C.U_NAME, A."DvResolutionCode", A."DvState", A."DvPriority", A."DvProblem",
+UTCTOLOCAL(E.SYS_CREATED_ON,'PST') AS PROBLEM_CREATED, E."U_TARGETED_VERSION" as TARGETED_VERSION,
+  E."U_P1_P2_INCIDENT_COUNT" as INCIDENT_COUNT,E."DV_STATE" as "STATE",
+   E."DV_U_PROBLEM_TYPE" as "PROBLEM_TYPE",
+  E."DV_PRIORITY" as "PROBLEM_PRIORITY" ,
+  E."DV_U_REGRESSION" as "REGRESSION",
+  E."DV_ASSIGNMENT_GROUP" as "PROBLEM_ASSIGNMENT_GROUP",
+  E."U_FIRST_FAMILY_DETECTED" as "FIRST_FAMILY_DETECTED",
+  E."DV_U_FAMILY_LAST_WORKED" as "FAMILY_LAST_WORKED",
+  E."TASK_COUNT" AS "PROBLEM_TASK_COUNT", 
+  E."DV_U_PROBLEM_CATEGORY",
+  E."DV_U_INITIAL_INCIDENT",
+  A."DvParent",
+  A."DvAssignmentGroup", A."DvAssignedTo", UTCTOLOCAL(A."SysCreatedOn",'PST') AS CREATED,
+  C.DV_U_PARENT AS INCIDENT_CATEGORY_PARENT,C."DV_U_CATEGORY_VP" as "CategoryVP",A."DvCompany",B.U_FEDERAL
+  , D.DV_LOCATION, D.U_COUNTRY,UG."DvParent" AS "TS-Parent",  
+UTCTOLOCAL(A."ResolvedAt",'PST') AS "ResolvedAt",
+--A.U_SOLUTION_PROPOSED_DURATION,
+A."OpenedAt",UTCTOLOCAL(A."ClosedAt",'PST') as "ClosedAt",
+CONCAT(CONCAT(substring(Monthname(UTCTOLOCAL(A."ClosedAt",'PST')),1,3),'-'),substring(YEAR(UTCTOLOCAL(A."ClosedAt",'PST')),3,4)) as "MonthYearOfClosedAt",
+A."CalendarSTCCase" AS RESOLUTION_TIME,
+A."ESCCount" as U_ESCALATION_COUNT, 
+--A.U_TOTAL_ESCALATED_PERIOD,
+D.DV_MANAGER,A."IsFederal" as "USGFlag",A."DvContactType",A."SysCreatedBy" AS "CaseSysCreatedBy",
+B."U_MARKETING_STATUS",
+C."DV_U_BUSINESS_UNIT" AS "BusinessUnit",A."DvLanguage" AS "Language",CD."DepartmentHead",
+PMG."GroupName" AS "ProblemManagementGroup",
+MT."KnowledgeArticle",MT."Task",MT."SysCreatedBy",MT."M2MSysCreatedOn"
+,US."DvSkill",US."DvUser",US."SysCreatedOn",US."Active",
+KB."KBKnowledgeBase",KB."WorkflowState",KB."Version",KB."Author",KB."DvUArticleOwnerGroup",KB."KBMinCreated",
+CASE WHEN "KBKnowledgeBase"='Known Error' or "KBKnowledgeBase"='Support and Troubleshooting' THEN '1' ELSE '0' END AS "STKEFlag"
+,DDIM."DateDimDate" ,DDIM."DateDimDayOfTheWeek",DDIM."DateDimWeekOfQuarter",DDIM."DateDimWeekBeginDate",DDIM."DateDimWeekNumYear"
+,UTCTOLOCAL(A."UOutageStartTime",'PST') AS "OutageStartTime"
+,UTCTOLOCAL(A."UOutageEndTime",'PST') AS "ImpactEndTime"
+,A."UTemporaryRelief" AS "TempReliefFlag"
+,CASE 
+ WHEN UTCTOLOCAL(A."UOutageStartTime",'PST') > UTCTOLOCAL(A."SysCreatedOn",'PST') THEN UTCTOLOCAL(A."UOutageStartTime",'PST')
+ WHEN UTCTOLOCAL(A."SysCreatedOn",'PST') > UTCTOLOCAL(A."UOutageStartTime",'PST') THEN UTCTOLOCAL(A."SysCreatedOn",'PST')
+ WHEN UTCTOLOCAL(A."SysCreatedOn",'PST') = UTCTOLOCAL(A."UOutageStartTime",'PST') THEN UTCTOLOCAL(A."SysCreatedOn",'PST')
+ END AS "ImpactStartTime"
+,CASE WHEN TO_NVARCHAR(A."UPotentiallyCausedByUpgrade")='0' then 'False'
+      WHEN TO_NVARCHAR(A."UPotentiallyCausedByUpgrade")='1' then 'True'END as "PotentiallyCausedByUpgrade"
+,D.DV_MANAGER AS "Manager"
+,A."DvPriority" AS "Priority"
+,A."CaseNumber"
+FROM "_SYS_BIC"."BASE_MODELS.HI/SN_CUSTOMERSERVICE_CASE" A 
+LEFT JOIN "_SYS_BIC"."BASE_MODELS.HI/CORE_COMPANY" B
+       ON A."Company" = B.SYS_ID
+LEFT JOIN "_SYS_BIC"."BASE_MODELS.HI/U_PRODUCT_CATEGORY" C
+       ON A."UCaseCategory" = C.SYS_ID
+LEFT JOIN "_SYS_BIC"."BASE_MODELS.HI/SYS_USER" D
+       ON A."AssignedTo" = D.SYS_ID
+LEFT JOIN "_SYS_BIC"."BASE_MODELS.SURF/U_EMPLOYEE" G
+          ON D."EMPLOYEE_NUMBER" = G."EMPLOYEE_NUMBER"       
+LEFT JOIN "_SYS_BIC"."BASE_MODELS.HI/PROBLEM" E
+       ON A."DvProblem" = E.NUMBER
+LEFT JOIN "_SYS_BIC"."BASE_MODELS.HI/SYS_USER_GROUP" UG
+ON A."AssignmentGroup" = UG."SysId"
+LEFT JOIN "_SYS_BIC"."BASE_MODELS.HI/SYS_USER" SG
+ON UG."GroupManager" = SG.SYS_ID
+LEFT JOIN "_SYS_BIC"."BASE_MODELS.HI/CMN_DEPARTMENT" CD
+ON SG.DEPARTMENT = CD."SysId"
+LEFT JOIN "_SYS_BIC"."BASE_MODELS.HI/SYS_USER_GROUP" PMG
+ON C."U_PROBLEM_MANAGEMENT_GROUP" = PMG."SysId"
+LEFT JOIN  "_SYS_BIC"."BASE_MODELS.HI/M2M_KB_TASK" MT
+ON (A."DvURefIncident" = MT."Task" OR A."CaseNumber" = MT."Task") 
+LEFT JOIN (select "SysCreatedOn","DvUser","Active","DvSkill","User" from "_SYS_BIC"."BASE_MODELS.HI/SYS_USER_HAS_SKILL" where "DvSkill" like 'S&L%') US
+ON A."AssignedTo"=US."User"
+LEFT JOIN (select "SysId","Number","KBKnowledgeBase","WorkflowState","Version","Author","DvUArticleOwnerGroup",max("SysUpdatedOn") ,
+		min("SysCreatedOn") over (PARTITION BY  "Number") as "KBMinCreated"
+		from "_SYS_BIC"."BASE_MODELS.HI/KB_KNOWLEDGE" --where "WorkflowState"='Published'
+		group by "SysId","Number","KBKnowledgeBase","WorkflowState","Version","Author","DvUArticleOwnerGroup",	"SysCreatedOn") KB
+       ON MT."KnowledgeArticle"=KB."Number" and MT."KBKnowledgeSysid" = KB."SysId"       
+LEFT JOIN "_SYS_BIC"."BASE_MODELS.SURF/DATE_DIMENSION" DDIM ON CAST(A."SysCreatedOn" as Date)= DDIM."DateDimDate"
+WHERE --(right(quarter(UTCTOLOCAL(A."SYS_CREATED_ON",'PST')),5)>= right(quarter(ADD_MONTHS(NOW(),-18)),5) OR 
+	   right(quarter(UTCTOLOCAL(A."ClosedAt",'PST')),5)>= right(quarter(ADD_MONTHS(NOW(),-18)),5)--)
+--((UTCTOLOCAL(A.SYS_CREATED_ON,'PST') > '2017-04-01 00:00:00' OR (UTCTOLOCAL(A.CLOSED_AT,'PST') > '2017-04-01 00:00:00'))
+	   AND A."DvParent" IS NULL 
+	   AND (A."DvResolutionCode" NOT IN ('Voided/Cancelled', 'Duplicate') OR A."DvResolutionCode" = '' OR A."DvResolutionCode" IS NULL)
+	   AND A."DvAssignmentGroup" IN (SELECT a."NAME" FROM "HI_RT"."SYS_USER_GROUP" a 
+       								 left join "HI_RT"."SYS_USER_GROUP" b
+									 on a."DV_PARENT" = b."NAME"
+									 where a."DV_PARENT" is NOT NULL 
+									 --where a."DV_PARENT" IN ( 'TS - DELIVERY', 'TS - USG DELIVERY')
+									 AND b."DV_PARENT" = 'TECHNICAL SUPPORT')
+       /*AND (                     
+            A."DvAssignmentGroup" = 'CS - Administration' OR A."DvAssignmentGroup" = 'CS - Automation' OR A."DvAssignmentGroup" = 'CS - Integrations' OR A."DvAssignmentGroup" = 'CS - Platform Technologies'
+                    OR A."DvAssignmentGroup" = 'CS - Performance' OR A."DvAssignmentGroup" = 'CS - SNExpress' OR A."DvAssignmentGroup" = 'CS - User Experience' OR 
+                   A."DvAssignmentGroup" = 'USG - Administration' OR
+                   A."DvAssignmentGroup" = 'USG - Automation' OR A."DvAssignmentGroup" = 'USG - Integrations' OR A."DvAssignmentGroup" = 'USG - Performance' OR A."DvAssignmentGroup" = 'USG - Platform Technologies'
+                   OR A."DvAssignmentGroup" = 'USG - User Experience' OR A."DvAssignmentGroup" = 'CS - Service Management'
+                   Or A."DvAssignmentGroup" = 'CS - Security' OR A."DvAssignmentGroup"='USG - Security'
+                   OR A."DvAssignmentGroup" = 'USG - Service Management' -- Removing the below filter as not avaliable in HI Report.
+                    
+            )*/
+        )       
+       KCS
+left join 
+(select distinct * from
+               (SELECT DV_U_TASK_FOUND_IN,
+                   DV_U_RELEASE_FAMILY,
+                   SYS_CREATED_ON,
+                   ROW_NUMBER() OVER(PARTITION BY DV_U_TASK_FOUND_IN ORDER BY DV_U_TASK_FOUND_IN DESC) RN
+            FROM "_SYS_BIC"."BASE_MODELS.HI/U_M2M_TASKS_SOFTWARE_PACKAGES"
+            WHERE DV_U_TASK LIKE 'INT%'
+                  AND DV_U_TASK_FOUND_IN <> ''
+                  AND SYS_CREATED_ON > '2017-04-01'
+                ) A 
+                WHERE RN = 1
+ORDER BY A.SYS_CREATED_ON ASC ) SPACK
+ON KCS."IncidentNumber"=SPACK."DV_U_TASK_FOUND_IN" OR KCS."CaseNumber"=SPACK."DV_U_TASK_FOUND_IN");
+
+---------------------------------------------------------------------------------
+CS_KCS_INTS_LEVEL0 =
+select a.*,CASE WHEN b."Fallunderboth" >= 2 THEN 'KBAttached' ELSE "1stKBFlag" end as "KBFlag" from  :CS_KCS_INTS_LEVEL00 a
+left join 
+(select "CaseNumber",count(distinct "1stKBFlag") AS "Fallunderboth" from :CS_KCS_INTS_LEVEL00 
+--WHERE "CaseNumber" IN ('CS4509409','CS4510789','CS4511180','CS4511267','CS4512154')
+group by "CaseNumber" 
+having count(distinct "1stKBFlag") >= 2 ) b
+on a."CaseNumber" = b."CaseNumber";
+
+-----------------------------------------------------------------------------------
+CS_KCS_LEVEL1 = 
+select "KnowledgeArticle","MonthYearOfClosedAt",COUNT(DISTINCT "CaseNumber") AS "CaseCount4KBMonth"
+from :CS_KCS_INTS_LEVEL0
+GROUP BY "KnowledgeArticle","MonthYearOfClosedAt";
+
+----------------------------------------------------
+CS_KCS_LEVEL2 =
+select a.*,b."CaseCount4KBMonth"
+from :CS_KCS_INTS_LEVEL0 a
+left join :CS_KCS_LEVEL1 b
+on a."KnowledgeArticle" = b."KnowledgeArticle" and a."MonthYearOfClosedAt" = b."MonthYearOfClosedAt"
+order by a."KnowledgeArticle","ClosedAt" ;
+
+----------------------------------------------------
+CS_KCS_LEVEL3 =
+
+select a.*,
+LEAD("CaseCount4KBMonth") OVER (PARTITION BY "KnowledgeArticle" ORDER BY "ClosedAt" desc) AS "lead"
+from :CS_KCS_LEVEL2 a
+order by a."KnowledgeArticle",a."ClosedAt";
+
+----------------------------------------------------
+CS_KCS_LEVEL4 =
+select a.*,
+CASE WHEN "lead" IS NULL THEN  "CaseCount4KBMonth"
+ELSE "CaseCount4KBMonth" + "lead" END AS "RunningTotal"
+from :CS_KCS_LEVEL3 a
+order by a."KnowledgeArticle",a."ClosedAt";
+
+----------------------------------------------------
+CS_KCS_LEVEL5 =
+
+select a.*,b."CaseMonthlyCount" from :CS_KCS_LEVEL4 a
+LEFT JOIN 
+(select "MonthYearOfClosedAt",count(distinct "CaseNumber") as "CaseMonthlyCount"
+FROM :CS_KCS_INTS_LEVEL0
+group by "MonthYearOfClosedAt") b
+ON a."MonthYearOfClosedAt" = b."MonthYearOfClosedAt";
+
+------------------------------------------------------
+CS_KCS_LEVEL6 =
+select a.*,c."AGCaseMonthlyCount" from :CS_KCS_LEVEL5 a
+LEFT JOIN 
+(select "AssignmentGroup","MonthYearOfClosedAt",count(distinct "CaseNumber") as "AGCaseMonthlyCount"
+FROM :CS_KCS_INTS_LEVEL0
+group by "AssignmentGroup","MonthYearOfClosedAt") c
+ON a."AssignmentGroup" = c."AssignmentGroup" and a."MonthYearOfClosedAt" = c."MonthYearOfClosedAt";
+
+----------------------------------------------------------
+CS_KCS_LEVEL7 =
+select a.*,b."KBReuseFlag" from :CS_KCS_LEVEL6 a
+left join 
+(select "KnowledgeArticle","MonthYearOfClosedAt",
+CASE WHEN "RunningTotal" > 1 and "Version" >= 1 
+     THEN '1' 
+     ELSE '0' 
+     END AS "KBReuseFlag" from 
+(
+select distinct a."KnowledgeArticle",a."MonthYearOfClosedAt",a."RunningTotal",a."Version",
+a."CaseMonthlyCount",a."lead",
+ROW_NUMBER() OVER (PARTITION BY a."KnowledgeArticle",a."MonthYearOfClosedAt"  ORDER BY a."RunningTotal") AS "RowNumber4reuse"
+from :CS_KCS_LEVEL6 a
+)
+where "RowNumber4reuse" = 1) b
+on a."KnowledgeArticle"= b."KnowledgeArticle" and a."MonthYearOfClosedAt"= b."MonthYearOfClosedAt";
+
+----------------------------------------------------------
+CS_KCS_LEVEL8 =
+select "CaseNumber","MonthYearOfClosedAt",'1' as "KBReuseFlag1"
+from 
+(
+select distinct a."CaseNumber",a."MonthYearOfClosedAt",count(distinct a."KBReuseFlag")
+from :CS_KCS_LEVEL7 a
+group by a."CaseNumber",a."MonthYearOfClosedAt"
+having count(distinct a."KBReuseFlag") > 1
+);
+
+----------------------------------------------------
+CS_KCS_LEVEL9 =
+select a.*,
+CASE WHEN a."KBReuseFlag" =  0 AND b."KBReuseFlag1" =  1 THEN 1 ELSE "KBReuseFlag" END AS "KBReuseFlag2"   
+from :CS_KCS_LEVEL7 a
+left join :CS_KCS_LEVEL8 b
+on  a."CaseNumber" = b."CaseNumber" and a."MonthYearOfClosedAt" = b."MonthYearOfClosedAt";
+
+----------------------------------------------------
+-- FInal Table
+var_out = select *
+ 	      from :CS_KCS_LEVEL9 a
+		  WHERE 1=1
+		  ORDER BY a."KnowledgeArticle",a."ClosedAt";
+
+/********* End Procedure Script ************/
+--select count(*) from :var_out; --where FAMILY = 'LONDON';
+return :var_out;
+
+END;

@@ -1,0 +1,133 @@
+\\corp.service-now.com\DataAnalyticsShare\Dev\TEST
+
+CREATE TABLE "SNOW_POC"."PUBLIC".PARTNERS_DOMAIN_MAPPING (PARTNER_NAME STRING, DOMAIN STRING);
+
+CREATE TABLE "SNOW_POC"."PUBLIC".COMMUNITY_PARTNERLEADER_SCORES 
+(
+ANSWER_DATE DATE
+,ANSWER_WEEK NUMBER
+,ANSWER_MONTH NUMBER
+,ANSWER_YEAR NUMBER
+,EMAIL_DOMAIN STRING
+,ANSWER_COUNT NUMBER
+);
+
+truncate "SNOW_POC"."PUBLIC".COMMUNITY_PARTNERLEADER_SCORES;
+truncate "SNOW_POC"."PUBLIC".PARTNERS_DOMAIN_MAPPING;
+
+
+copy into "SNOW_POC"."PUBLIC".COMMUNITY_PARTNERLEADER_SCORES from  @poc_stage/COMMUNITY_PARTNERLEADER_SCORES.csv.gz
+file_format = (format_name = 'EXCEL_FORMAT');
+
+
+put file://C:\Users\balu.venkata\Desktop\COMMUNITY_PARTNERLEADER_SCORES.csv @POC_STAGE auto_compress=true;
+
+servicenow.snowflakecomputing.com
+SNCnow123$
+
+snowsql -a servicenow -d SNOW_POC -u balu
+
+C:\Program Files\Snowflake SnowSQL
+
+Step 1
+1)Place the File in share Drive
+2) Upload the File to Snowflake S3 Stage  = POC_STAGE
+3) Run the below command in SNOWSQL
+
+put file:////corp.service-now.com\DataAnalyticsShare\Dev\TEST\USAGEANALYTICS_COUNT_NONPROD_TEST.csv @POC_STAGE auto_compress=true;
+
+4) File gets upload with .gz Example "USAGEANALYTICS_COUNT_NONPROD_TEST.csv.gz"
+
+Verify the list of file  :    list @poc_stage;  
+To remove : remove @poc_stage/USAGEANALYTICS_COUNT_NONPROD_TEST.csv.gz;
+
+5) Select the ware house to do the processing  syntax  :      use warehouse  LOAD_DW;
+
+6) Load the data to Table
+
+copy into "DEMO_DB"."PUBLIC".ST_SALES_OPPORTUNITY from  @https://s3-us-west-1.amazonaws.com/snlake/ST_SALES_OPPORTUNITY_POC.csv file_format = (format_name = 'EXCEL_FORMAT');
+
+----------------------------------------------------------------------------------------------------------------------------------------------------
+--> Format
+--------------------
+create or replace file format my_csv_format type = 'CSV' field_delimiter = '|' skip_header = 1;
+drop file format EXCEL_FORMAT;
+create  file format EXCEL_FORMAT type = 'CSV' field_delimiter = '|' skip_header = 1;
+
+list @AMZS3LAKE;
+snowsql -a servicenow -u baluv -d DEMO_DB -w  LOAD_WH -s PUBLIC;   qpZM@1313
+copy into "DEMO_DB"."PUBLIC".ST_SALES_OPPORTUNITY from  @AMZS3LAKE/s3://sns3poc/ST_SALES_OPPORTUNITY_POC.csv file_format = (format_name = 'EXCEL_FORMAT');
+copy into "DEMO_DB"."PUBLIC".ST_SALES_OPPORTUNITY from  @AMZS3LAKE/ST_SALES_OPPORTUNITY_POC.csv file_format = (format_name = "EXCEL_FORMAT");
+\\corp.service-now.com\DataAnalyticsShare\Dev\TEST\OPTY_DUMP
+
+put file:////corp.service-now.com\DataAnalyticsShare\Dev\TEST\ST_SALES_OPPORTUNITY_POC.csv @SN_INTERNAL_STAGE  auto_compress=true;
+copy into "DEMO_DB"."PUBLIC".ST_SALES_OPPORTUNITY from  @sn_internal_stage/ST_SALES_OPPORTUNITY.csv.gz file_format = (format_name = 'EXCEL_FORMAT') ON_ERROR = 'CONTINUE';
+remove @SN_INTERNAL_STAGE/ST_SALES_OPPORTUNITY.csv.gz
+
+
+put file:////corp.service-now.com\DataAnalyticsShare\Dev\TEST\ST_SALES_OPPORTUNITY_POC_1000_recs.csv @SN_INTERNAL_STAGE  auto_compress=true;
+
+put file:////corp.service-now.com\DataAnalyticsShare\Dev\TEST\ST_SALES_OPPORTUNITY_POC_1.CSV @SN_INTERNAL_STAGE  auto_compress=true;
+
+snowsql -a servicenow -u baluv -d DEMO_DB -w  LOAD_WH -s PUBLIC; 
+password qpZM@1313
+USE SCHEMA PUBLIC;
+
+
+
+list @SN_INTERNAL_STAGE;
+
+remove @sn_internal_stage/ST_SALES_OPPORTUNITY_POC_1.CSV.gz;
+
+put file:////corp.service-now.com\DataAnalyticsShare\Dev\TEST\ST_SALES_OPPORTUNITY_POC_1.CSV @SN_INTERNAL_STAGE  auto_compress=true;
+
+
+put file:////corp.service-now.com\DataAnalyticsShare\Dev\TEST\ST_SALES_OPPORTUNITY_POC_1.CSV @SN_INTERNAL_STAGE  auto_compress=true;
+put file:////corp.service-now.com\DataAnalyticsShare\Dev\TEST\ST_SALES_OPPORTUNITY_POC_2.CSV @SN_INTERNAL_STAGE  auto_compress=true;
+put file:////corp.service-now.com\DataAnalyticsShare\Dev\TEST\ST_SALES_OPPORTUNITY_POC_3.CSV @SN_INTERNAL_STAGE  auto_compress=true;
+put file:////corp.service-now.com\DataAnalyticsShare\Dev\TEST\ST_SALES_OPPORTUNITY_POC_4.CSV @SN_INTERNAL_STAGE  auto_compress=true;
+put file:////corp.service-now.com\DataAnalyticsShare\Dev\TEST\ST_SALES_OPPORTUNITY_POC_5.CSV @SN_INTERNAL_STAGE  auto_compress=true;
+
+
+copy into "DEMO_DB"."PUBLIC".ST_SALES_OPPORTUNITY_POC  from  @sn_internal_stage/ST_SALES_OPPORTUNITY_POC_1.CSV.gz file_format = (format_name = 'EXCEL_FORMAT') ON_ERROR = 'CONTINUE';
+copy into "DEMO_DB"."PUBLIC".ST_SALES_OPPORTUNITY_POC  from  @sn_internal_stage/ST_SALES_OPPORTUNITY_POC_2.CSV.gz file_format = (format_name = 'EXCEL_FORMAT') ON_ERROR = 'CONTINUE';
+copy into "DEMO_DB"."PUBLIC".ST_SALES_OPPORTUNITY_POC  from  @sn_internal_stage/ST_SALES_OPPORTUNITY_POC_3.CSV.gz file_format = (format_name = 'EXCEL_FORMAT') ON_ERROR = 'CONTINUE';
+copy into "DEMO_DB"."PUBLIC".ST_SALES_OPPORTUNITY_POC  from  @sn_internal_stage/ST_SALES_OPPORTUNITY_POC_4.CSV.gz file_format = (format_name = 'EXCEL_FORMAT') ON_ERROR = 'CONTINUE';
+copy into "DEMO_DB"."PUBLIC".ST_SALES_OPPORTUNITY_POC  from  @sn_internal_stage/ST_SALES_OPPORTUNITY_POC_5.CSV.gz file_format = (format_name = 'EXCEL_FORMAT') ON_ERROR = 'CONTINUE';
+
+
+
+create column table "SURF"."ST_SALES_OPPORTUNITY_POC" as (
+select 
+substr(so.number,5,10) as number,
+'a'||left(rand(),2)||'e'||left(rand(),4) as name,
+so.u_isr_interaction,
+so.close_date,
+so.u_close_month,
+so.u_sales_quarter,
+so.u_order_term_start_date,
+so.dv_u_territory,
+so.extract_date,
+so.dv_pipeline_status,
+so.dv_stage,
+so.dv_type,
+so.u_incumbent,
+so.sys_updated_on,
+so.sys_updated_by,
+so.u_renewal_category,
+so.u_weighted_percentage,
+so.sys_created_on,
+so.dv_u_msp_sales,
+so.dv_u_msp_territory,
+so.dv_u_end_customer,
+so.u_next_steps,
+so.dv_u_value_promter_master,
+SUBSTR(u_parent,1,10)||'xQ'||SUBSTR(u_parent,11) as u_parent,
+SUBSTR(SYS_ID,1,10)||'xQ'||SUBSTR(SYS_ID,11) as sys_id,
+SUBSTR(account,1,10)||'xQ'||SUBSTR(account,11) as account,
+SUBSTR(u_territory,1,10)||'xQ'||SUBSTR(u_territory,11) as u_territory
+from "SURF_ST"."ST_SALES_OPPORTUNITY" so
+ WHERE SNAPSHOT_QUARTER<>'18-Q1' 
+);
+
+

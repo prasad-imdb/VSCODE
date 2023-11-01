@@ -1,0 +1,354 @@
+/*
+DDL - Data Definition Language
+
+-- It consists of the SQL commands that can be used to define or make changes in the database objects. 
+-- It simply deals with descriptions and is used to create and modify the structure of database objects in the database. 
+
+Examples of DDL commands:
+
+    * CREATE – is used to create the database or its objects (like table, index, function, views, triggers and store procedure).
+    * DROP – is used to delete objects from the database.
+    * ALTER - is used to alter the structure of the database.
+    * TRUNCATE – is used to remove all records from a table, including all spaces allocated for the records are removed.
+    * COMMENT – is used to add comments to the data dictionary.
+
+*/
+
+----------------- CREATE -----------------
+--create the database or its objects (warehouse, database, schema, table, stage, file format, role, user,
+--                                     function, views, triggers and store procedure).
+
+// create virtual warehouse
+create warehouse test;           -- By default it creates XS-Extra Small size warehouse
+
+-- Warehouse sizes are similar to T-SHIRT sizes from XS to 4X-LARGE
+-- Provide warehouse NAME as it is mandatory 
+-- Below are optional parameters that CREATE WAREHOUSE statement
+/*objectProperties ::=
+  WAREHOUSE_SIZE = XSMALL | SMALL | MEDIUM | LARGE | XLARGE | XXLARGE | XXXLARGE | X4LARGE
+  MAX_CLUSTER_COUNT = <num>
+  MIN_CLUSTER_COUNT = <num>
+  SCALING_POLICY = STANDARD | ECONOMY
+  AUTO_SUSPEND = <num> | NULL
+  AUTO_RESUME = TRUE | FALSE
+  INITIALLY_SUSPENDED = TRUE | FALSE
+  RESOURCE_MONITOR = <monitor_name>
+  COMMENT = '<string_literal>'*/
+
+create warehouse SATISH_wh WAREHOUSE_SIZE = MEDIUM;
+
+-- To suspend a warehouse
+alter warehouse NAVEEN_WH RESUME;
+
+-- if warehouse is in suspended state, we can resume it by running below statement
+alter warehouse test resume;
+
+-- list warehouses
+show warehouses;
+
+use warehouse SATISH_wh;
+use warehouse test;
+
+------------------------------------------------------------
+// create database
+create database company;
+
+create or replace database company;
+
+show databases like 'c%';
+
+use database demo_db;
+
+
+// create schema
+create or replace schema employee;
+create schema if not exists department;
+drop schema if exists department;
+
+show schemas like 'N%';
+
+use schema information_schema;
+use schema public;
+
+
+//create table
+create table EMPLOYEE.A(id number,
+               name varchar(20));
+
+create or replace table B(id number(32,5),
+               salary number,
+               department varchar(10));
+               
+-- precision, scale: These are the parameters that can be passed with various datatypes such as number
+                    -- Precision is the length of string/number that column can have 
+                    -- Scale is the number of digits that will be allowed after (.)
+                    -- Example: number(38,5) shows that precision is 38 and scale is 5
+               
+-------------------------------------------------------------------------
+-- Create parquet format
+create or replace file format demo_db.public.parquet_format
+  type = 'parquet';
+
+-- Create stage object
+create or replace stage demo_db.public.mystage
+  file_format = demo_db.public.parquet_format;
+
+---------------------------------------------------------------------------
+
+// create view
+-- a materialized view is a database object that contains the results of a query. 
+-- For example, it may be a local copy of data located remotely, 
+--      or may be a subset of the rows and/or columns of a table or join result, or may be a summary using an aggregate function
+
+create view myview as 
+    select * 
+    from "SNOWFLAKE_SAMPLE_DATA"."TPCH_SF100"."CUSTOMER" 
+    where c_custkey <= 5;
+
+select * from myview;
+
+---- To know more about snowflake views, refer to below URL:
+-- https://docs.snowflake.com/en/sql-reference/sql/create-view.html
+
+------------------------------------------------------------------------------
+
+----------------- ALTER -----------------
+-- alter the structure of the objects
+
+------ ALTER WAREHOUSE
+  -- Suspends or resumes a virtual warehouse, or aborts all queries (and other SQL statements) for a warehouse. 
+  -- Can also be used to rename or set/unset the properties for a warehouse.
+  
+-- To suspend a warehouse
+alter warehouse test suspend;
+
+alter warehouse test resume;
+
+-- if warehouse is in suspended state, we can resume it by running below statement
+alter warehouse test resume if suspended;
+
+-- abort all queries running in warehouse
+alter warehouse compute_wh abort all queries;
+
+-- rename warehouse name
+alter warehouse compute_wh rename to computer_wh;
+alter warehouse computer_wh rename to compute_wh;
+
+-----------------------------------------------------------------------
+-- Create ROLE and USER. Then grant privileges.
+
+CREATE OR REPLACE ROLE TEST_ROLE;
+CREATE ROLE IF NOT EXISTS TEST_ROLE;
+
+GRANT ALL PRIVILEGES ON DATABASE DEMO_DB TO ROLE TEST_ROLE;
+GRANT ALL PRIVILEGES ON SCHEMA EMPLOYEE TO ROLE TEST_ROLE;
+GRANT ALL PRIVILEGES ON TABLE A TO ROLE TEST_ROLE;
+GRANT ALL PRIVILEGES ON TABLE EMPLOYEE.A TO ROLE TEST_ROLE;
+
+USE ROLE TEST_ROLE;
+
+GRANT ROLE TEST_ROLE TO USER KASHISHGAKKAR;
+
+
+CREATE OR REPLACE USER TEST_USER PASSWORD = 'ABC123' DEFAULT_ROLE = 'PUBLIC' MUST_CHANGE_PASSWORD = TRUE;
+
+// GRANT PRIVILEGES TO ROLE
+-- Grants one or more access privileges on a securable object to a role. 
+-- The privileges that can be granted are object-specific and are grouped into the following categories:
+    -- Global privileges
+    -- Privileges for account objects (resource monitors, virtual warehouses, and databases)
+    -- Privileges for schemas
+    -- Privileges for schema objects (tables, views, stages, file formats, UDFs, and sequences)
+
+
+// GRANT ROLE
+    -- Assigns a role to a user or another role:
+    -- Granting a role to another role creates a “parent-child” relationship between the roles (also referred to as a role hierarchy).
+    -- Granting a role to a user enables the user to perform all operations allowed by the role 
+        -- (through the access privileges granted to the role).
+        
+SHOW GRANTS;
+
+
+------ ALTER DATABASE
+-- Modifies the properties for an existing database, including the following:
+    -- Changing the name of the database or changing the Time Travel data retention period 
+                -- (only available in ENTERPRISE or BUSINESS CRITICAL snowflake editions)
+    -- Enabling and managing database replication and failover.
+
+ALTER DATABASE IF EXISTS COMPANY RENAME TO PRODUCTION;
+ALTER DATABASE IF EXISTS PRODUCTION RENAME TO COMPANY;
+
+------ ALTER SCHEMA
+-- Modifies the properties for an existing schema, including renaming the schema or swapping it with another schema, 
+    // and changing the Time Travel data retention period
+    
+ALTER SCHEMA IF EXISTS EMPLOYEE RENAME TO EMPL;
+
+create or replace schema employee;
+create schema if not exists department;
+create or replace table demo_db.employee.empl_details(empl_id number);
+create or replace table demo_db.department.dept_details(dept_id number);
+
+ALTER SCHEMA IF EXISTS DEMO_DB.DEPARTMENT SWAP WITH DEMO_DB.EMPLOYEE;
+
+ALTER SCHEMA IF EXISTS DEMO_DB.DEPARTMENT
+SET DATA_RETENTION_TIME_IN_DAYS = 2,
+    COMMENT = 'DEPARTMENT DETAILS SCHEMA';
+    
+SELECT * FROM "DEMO_DB"."INFORMATION_SCHEMA"."SCHEMATA"
+WHERE SCHEMA_NAME = 'DEPARTMENT';
+    
+show schemas;
+    
+------ ALTER TABLE
+-- Modifies the properties, columns, or constraints for an existing table.
+
+ALTER TABLE IF EXISTS DEPARTMENT.DEPT_DETAILS RENAME TO DEPARTMENT_DETAILS;
+
+ALTER TABLE IF EXISTS EMPLOYEE.DEPARTMENT_DETAILS RENAME TO DEPARTMENT.DEPARTMENT_DETAILS;
+
+create or replace table demo_db.department.department_employees(dept_id number,
+                                                               empl_name varchar(40));
+                                                               
+ALTER TABLE IF EXISTS DEMO_DB.DEPARTMENT.DEPARTMENT_DETAILS SWAP WITH DEMO_DB.DEPARTMENT.DEPARTMENT_EMPLOYEES;
+
+
+---------------------------------------
+
+----------------- DROP -----------------
+-- delete objects from the database permenently.
+
+drop table employee.empl_details;
+drop schema demo_db.empl;
+drop database company;
+drop warehouse test;
+drop view demo_db.public.myview;
+drop stage if exists mystage;
+drop file format if exists parquet_format;
+
+-------------------------------------------------
+
+----------------- TRUNCATE -----------------
+-- remove all records from a table, including all memory spaces allocated for the records are removed
+
+TRUNCATE TABLE DEMO_DB.PUBLIC.A;
+TRUNCATE TABLE IF EXISTS DEMO_DB.DEPARTMENT.DEPARTMENT_DETAILS;
+
+----------------- COMMENT -----------------
+-- add comments to the data dictionary
+-- overwrites an existing comment for an existing object.
+-- can be added to all objects (users, roles, warehouses, databases, tables, etc.). 
+-- can be added to individual table columns as well.
+
+COMMENT IF EXISTS ON SCHEMA DEMO_DB.DEPARTMENT IS 'TEST Department Schema xyz';
+
+SHOW SCHEMAS LIKE 'DEPARTMENT';
+
+DESC SCHEMA DEPARTMENT;
+
+COMMENT IF EXISTS ON TABLE DEMO_DB.DEPARTMENT.DEPARTMENT_EMPLOYEES IS 'ALL ABOUT DEPARTMENT DETAILS';
+
+SHOW TABLES LIKE 'DEPARTMENT_EMPLOYEES';
+
+-- Check if a existing view is a secure view
+select table_catalog, table_schema, table_name, is_secure 
+from demo_db.information_schema.views where table_name like '%ORDERS%';
+
+select * from demo_db.information_schema.views where table_name like '%CUSTOMERS%';
+
+select table_catalog, table_schema, table_name, is_secure from snowflake.account_usage.views where table_name like '%ORDERS%';
+select * from snowflake.account_usage.views where table_name like '%ORDERS%';
+
+
+
+-- drop materialized and non-materialized views
+show views;
+
+drop view VW_ORDERS;
+drop materialized view MVW_ORDERS;
+drop materialized view MVW_TOP_ORDERS;
+drop materialized view MVW_TOP_NEW_ORDERS;
+drop materialized view MVW_CLUSTERED_ORDERS;
+
+
+-------------------- SECURE VIEWS --------------------
+-- When regular/normal view is created, there are chances that users may be able to verify some values in underlying data table
+
+-- Check different values for ORDERPRIORITY column available in Orders table
+select top 100 * from "SNOWFLAKE_SAMPLE_DATA"."TPCH_SF10"."CUSTOMER";
+select distinct C_MKTSEGMENT from "SNOWFLAKE_SAMPLE_DATA"."TPCH_SF10"."CUSTOMER";
+create or replace table CUSTOMERS as select * from "SNOWFLAKE_SAMPLE_DATA"."TPCH_SF10"."CUSTOMER";
+
+select distinct C_MKTSEGMENT from "DEMO_DB"."PUBLIC"."CUSTOMERS";
+
+-- C_MKTSEGMENT
+MACHINERY
+FURNITURE
+HOUSEHOLD
+AUTOMOBILE
+BUILDING;
+
+-- Create Regular/Normal View using a filter on C_MKTSEGMENT column
+create or replace view VW_CUSTOMERS as
+select C_NAME, C_ACCTBAL, C_NATIONKEY, C_MKTSEGMENT
+from "SNOWFLAKE_SAMPLE_DATA"."TPCH_SF100"."CUSTOMER"
+where C_MKTSEGMENT = 'FURNITURE';
+
+-- Create Secure View
+create or replace SECURE view SECURE_VW_CUSTOMERS as
+select C_NAME, C_ACCTBAL, C_NATIONKEY, C_MKTSEGMENT
+from "SNOWFLAKE_SAMPLE_DATA"."TPCH_SF100"."CUSTOMER"
+where C_MKTSEGMENT = 'FURNITURE';
+
+-- Lets create a custom role 'ANALYST' which should not have access to the underlying data
+create or replace role analyst;
+
+GRANT USAGE ON NAVEEN_WH TO ROLE ANALYST;
+-- Grant privileges of database, schema and views to ANALYST role
+grant usage on database NAVEEN to role ANALYST;
+grant usage on schema NAVEEN.TALENT to role ANALYST;
+grant select on NAVEEN.TALENT.VW_CUSTOMERS to role ANALYST;
+grant select on NAVEEN.TALENT.SECURE_VW_CUSTOMERS to role ANALYST;
+
+grant operate on warehouse NAVEEN_WH to role analyst WITH GRANT OPTION;
+grant usage on warehouse NAVEEN_WH to role ANALYST;
+
+-- Also, provide access to a warehouse
+grant usage on warehouse NAVEEN_WH to role ANALYST;
+
+grant role ANALYST to user SANTOSH;
+
+-- Query on regular view using ACCOUNTADMIN and ANALYST roles - Look at the differences
+-- ACCOUNTADMIN is the owner of views
+-- ANALYST is the user of views which does not have access to underlying data
+select *
+from DEMO_DB.PUBLIC.VW_CUSTOMERS
+where 1/iff(upper(C_MKTSEGMENT) = 'MACHINERY', 0, 1) = 1;
+
+-- Query on secure view using ANALYST role
+select *
+from DEMO_DB.PUBLIC.SECURE_VW_CUSTOMERS
+where 1/iff(upper(C_MKTSEGMENT) = 'MACHINERY', 0, 1) = 1;
+
+
+--------------------------------
+
+-- Assume role ANALYST
+use role ANALYST;
+use database DEMO_DB;
+use schema PUBLIC;
+
+use role ACCOUNTADMIN;
+
+show views;
+
+select get_ddl('VIEW','SECURE_VW_CUSTOMERS');
+select get_ddl('VIEW','VW_CUSTOMERS');
+select get_ddl('TABLE','ALBUM');
+
+-- Focus on below points
+// By running, SHOW VIEWS command, ANALYST role does not have access to SECURE VIEW definition
+// Looking at the Query profile, we can clearly observe that SECURE views does not evaluate 
+//        the user query before authentication of the role/user
+// Functions like GET_DDL does not work on secure views (except view owners)

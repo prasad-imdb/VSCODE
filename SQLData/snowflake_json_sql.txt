@@ -1,0 +1,2956 @@
+-----------------------------------------------------------------------------------------------------
+-->********************************** Others  ***********************
+-----------------------------------------------------------------------------------------------------
+ELECT 
+SRC:name
+,SRC:products_purchased
+,get_path(src, 'products_purchased[0]:version')  -- Arrays
+,src:products_purchased[0].version   -- Arrays
+,SRC:phone
+,SRC:phone:office
+
+FROM
+(
+  select parse_json(column1) as SRC
+  from values
+  ('{
+    "name": "Ian Fields",
+    "email": "ifields@lectus.ca",
+    "phone": {
+      "cell": "555-745-9463",
+      "office": "555-745-2394"
+    },
+    "products_purchased":[
+        {"id":"1", "version":"2.8"}
+    ]
+    }')
+ )
+---------------------
+
+SELECT SRC:products_purchased[2]:id from (
+  select parse_json(column1) as SRC
+  from values
+  ('{
+    "products_purchased":[
+        {"id":"1", "version":"2.8"} , {"id":"2", "version":"0"},{"id":"3", "version":"212"}
+    ]
+    }')
+)
+
+
+-----------------------------------------------------------------------------------------------------
+-->***********************************************Adobe Analytics  ***********************
+-----------------------------------------------------------------------------------------------------
+ 
+select distinct
+d.value:name as Report_Date
+,br1.value:name as country
+,br2.value:name as URL
+,br2.value:counts[0]:: VARCHAR as PAGE_VIEWS_COUNT
+,br2.value:counts[1]:: VARCHAR as PAGE_VISIT_COUNT 
+,br2.value:counts[2]:: VARCHAR as UNIQUE_VISITOR_COUNT 
+,br2.value:counts[3]:: VARCHAR as BOUNCE_RATE 
+,br2.value:counts[4]:: VARCHAR as AVG_TIME_SPENT_ON_PAGE 
+from  "SNOW_POC"."PUBLIC"."PAGE_URL_METRICS" ,
+ table(flatten(src:report.data)) d,
+ table(flatten(d.value:breakdown)) br1,
+ table(flatten(br1.value:breakdown)) br2,
+ table(flatten(br2.value:counts)) counts;
+ 
+
+-----------------------------------------------------------------------------------------------------
+-->*********************************************** CALABRIO_AGENT_SHIFT_INFO  ***********************
+-----------------------------------------------------------------------------------------------------
+select
+ src:"agentId"::INT as agentId
+ ,src:"agentTimeZone"::STRING as agentTimeZone
+ ,actdate.value:date::DATE AS DATE
+ ,schact.value:activityDetailName::STRING  AS activityDetailName
+ ,schact.value:activityType::STRING AS activityType
+  ,schact.value:activityTypeLabel::STRING as activityTypeLabel
+ ,schact.value:paid::STRING as Is_paid
+ ,schact.value:startTime::string as startTime
+ ,schact.value:endTime::STRING as endTime
+
+ from 
+  "SNOW_POC"."PUBLIC"."CALABRIO_AGENT_SHIFT_INFO",
+  table(flatten(src:"activitiesByDate")) actdate,
+  table(flatten(actdate.value:"scheduledActivities")) schact;
+  
+ -----
+  
+  select
+ d.value:date::DATe
+ from 
+  "SNOW_POC"."PUBLIC"."CALABRIO_AGENT_SHIFT_INFO",
+  table(flatten(src:"activitiesByDate")) d
+  
+  
+  -- File
+  
+  CREATE  TABLE "SNOW_POC"."PUBLIC"."CALABRIO_AGENT_SHIFT_INFO"  (src variant)
+AS 
+select parse_json(column1) as src
+from values
+('
+	
+	
+	{
+    "activitiesByDate": [
+        {
+            "date": "2017-07-17",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1500274800000,
+                    "endTime": 1500294600000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1500294600000,
+                    "endTime": 1500298200000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1500298200000,
+                    "endTime": 1500307200000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1500307200000,
+                    "endTime": 1500361200000
+                }
+            ]
+        },
+        {
+            "date": "2017-07-18",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1500361200000,
+                    "endTime": 1500381000000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1500381000000,
+                    "endTime": 1500384600000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1500384600000,
+                    "endTime": 1500393600000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1500393600000,
+                    "endTime": 1500447600000
+                }
+            ]
+        },
+        {
+            "date": "2017-07-19",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1500447600000,
+                    "endTime": 1500467400000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1500467400000,
+                    "endTime": 1500471000000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1500471000000,
+                    "endTime": 1500480000000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1500480000000,
+                    "endTime": 1500534000000
+                }
+            ]
+        },
+        {
+            "date": "2017-07-20",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1500534000000,
+                    "endTime": 1500553800000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1500553800000,
+                    "endTime": 1500557400000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1500557400000,
+                    "endTime": 1500566400000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1500566400000,
+                    "endTime": 1500620400000
+                }
+            ]
+        },
+        {
+            "date": "2017-07-21",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1500620400000,
+                    "endTime": 1500640200000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1500640200000,
+                    "endTime": 1500643800000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1500643800000,
+                    "endTime": 1500652800000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1500652800000,
+                    "endTime": 1500706800000
+                }
+            ]
+        },
+        {
+            "date": "2017-07-22",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1500706800000,
+                    "endTime": 1500793200000
+                }
+            ]
+        },
+        {
+            "date": "2017-07-24",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1500879600000,
+                    "endTime": 1500899400000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1500899400000,
+                    "endTime": 1500903000000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1500903000000,
+                    "endTime": 1500912000000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1500912000000,
+                    "endTime": 1500966000000
+                }
+            ]
+        },
+        {
+            "date": "2017-07-25",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1500966000000,
+                    "endTime": 1500985800000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1500985800000,
+                    "endTime": 1500989400000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1500989400000,
+                    "endTime": 1500998400000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1500998400000,
+                    "endTime": 1501052400000
+                }
+            ]
+        },
+        {
+            "date": "2017-07-26",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1501052400000,
+                    "endTime": 1501072200000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1501072200000,
+                    "endTime": 1501075800000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1501075800000,
+                    "endTime": 1501084800000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1501084800000,
+                    "endTime": 1501138800000
+                }
+            ]
+        },
+        {
+            "date": "2017-07-27",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1501138800000,
+                    "endTime": 1501158600000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1501158600000,
+                    "endTime": 1501162200000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1501162200000,
+                    "endTime": 1501171200000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1501171200000,
+                    "endTime": 1501225200000
+                }
+            ]
+        },
+        {
+            "date": "2017-07-28",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1501225200000,
+                    "endTime": 1501245000000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1501245000000,
+                    "endTime": 1501248600000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1501248600000,
+                    "endTime": 1501257600000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1501257600000,
+                    "endTime": 1501311600000
+                }
+            ]
+        },
+        {
+            "date": "2017-07-29",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1501311600000,
+                    "endTime": 1501398000000
+                }
+            ]
+        },
+        {
+            "date": "2017-07-31",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1501484400000,
+                    "endTime": 1501504200000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1501504200000,
+                    "endTime": 1501507800000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1501507800000,
+                    "endTime": 1501516800000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1501516800000,
+                    "endTime": 1501570800000
+                }
+            ]
+        },
+        {
+            "date": "2017-08-01",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1501570800000,
+                    "endTime": 1501590600000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1501590600000,
+                    "endTime": 1501594200000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1501594200000,
+                    "endTime": 1501603200000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1501603200000,
+                    "endTime": 1501657200000
+                }
+            ]
+        },
+        {
+            "date": "2017-08-02",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1501657200000,
+                    "endTime": 1501677000000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1501677000000,
+                    "endTime": 1501680600000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1501680600000,
+                    "endTime": 1501689600000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1501689600000,
+                    "endTime": 1501743600000
+                }
+            ]
+        },
+        {
+            "date": "2017-08-03",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1501743600000,
+                    "endTime": 1501763400000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1501763400000,
+                    "endTime": 1501767000000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1501767000000,
+                    "endTime": 1501776000000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1501776000000,
+                    "endTime": 1501830000000
+                }
+            ]
+        },
+        {
+            "date": "2017-08-04",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1501830000000,
+                    "endTime": 1501849800000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1501849800000,
+                    "endTime": 1501853400000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1501853400000,
+                    "endTime": 1501862400000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1501862400000,
+                    "endTime": 1501916400000
+                }
+            ]
+        },
+        {
+            "date": "2017-08-05",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1501916400000,
+                    "endTime": 1502002800000
+                }
+            ]
+        },
+        {
+            "date": "2017-08-07",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1502089200000,
+                    "endTime": 1502109000000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1502109000000,
+                    "endTime": 1502112600000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1502112600000,
+                    "endTime": 1502121600000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1502121600000,
+                    "endTime": 1502175600000
+                }
+            ]
+        },
+        {
+            "date": "2017-08-08",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1502175600000,
+                    "endTime": 1502195400000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1502195400000,
+                    "endTime": 1502199000000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1502199000000,
+                    "endTime": 1502208000000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1502208000000,
+                    "endTime": 1502262000000
+                }
+            ]
+        },
+        {
+            "date": "2017-08-09",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1502262000000,
+                    "endTime": 1502281800000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1502281800000,
+                    "endTime": 1502285400000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1502285400000,
+                    "endTime": 1502294400000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1502294400000,
+                    "endTime": 1502348400000
+                }
+            ]
+        },
+        {
+            "date": "2017-08-10",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1502348400000,
+                    "endTime": 1502368200000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1502368200000,
+                    "endTime": 1502371800000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1502371800000,
+                    "endTime": 1502380800000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1502380800000,
+                    "endTime": 1502434800000
+                }
+            ]
+        },
+        {
+            "date": "2017-08-11",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1502434800000,
+                    "endTime": 1502454600000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1502454600000,
+                    "endTime": 1502458200000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1502458200000,
+                    "endTime": 1502467200000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1502467200000,
+                    "endTime": 1502521200000
+                }
+            ]
+        },
+        {
+            "date": "2017-08-12",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1502521200000,
+                    "endTime": 1502607600000
+                }
+            ]
+        },
+        {
+            "date": "2017-08-14",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1502694000000,
+                    "endTime": 1502713800000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1502713800000,
+                    "endTime": 1502717400000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1502717400000,
+                    "endTime": 1502726400000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1502726400000,
+                    "endTime": 1502780400000
+                }
+            ]
+        },
+        {
+            "date": "2017-08-15",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1502780400000,
+                    "endTime": 1502800200000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1502800200000,
+                    "endTime": 1502803800000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1502803800000,
+                    "endTime": 1502812800000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1502812800000,
+                    "endTime": 1502866800000
+                }
+            ]
+        },
+        {
+            "date": "2017-08-16",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1502866800000,
+                    "endTime": 1502886600000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1502886600000,
+                    "endTime": 1502890200000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1502890200000,
+                    "endTime": 1502899200000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1502899200000,
+                    "endTime": 1502953200000
+                }
+            ]
+        },
+        {
+            "date": "2017-08-17",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1502953200000,
+                    "endTime": 1502973000000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1502973000000,
+                    "endTime": 1502976600000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1502976600000,
+                    "endTime": 1502985600000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1502985600000,
+                    "endTime": 1503039600000
+                }
+            ]
+        },
+        {
+            "date": "2017-08-18",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1503039600000,
+                    "endTime": 1503059400000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1503059400000,
+                    "endTime": 1503063000000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1503063000000,
+                    "endTime": 1503072000000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1503072000000,
+                    "endTime": 1503126000000
+                }
+            ]
+        },
+        {
+            "date": "2017-08-19",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1503126000000,
+                    "endTime": 1503212400000
+                }
+            ]
+        },
+        {
+            "date": "2017-08-21",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1503298800000,
+                    "endTime": 1503318600000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1503318600000,
+                    "endTime": 1503322200000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1503322200000,
+                    "endTime": 1503331200000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1503331200000,
+                    "endTime": 1503385200000
+                }
+            ]
+        },
+        {
+            "date": "2017-08-22",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1503385200000,
+                    "endTime": 1503405000000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1503405000000,
+                    "endTime": 1503408600000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1503408600000,
+                    "endTime": 1503417600000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1503417600000,
+                    "endTime": 1503471600000
+                }
+            ]
+        },
+        {
+            "date": "2017-08-23",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1503471600000,
+                    "endTime": 1503491400000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1503491400000,
+                    "endTime": 1503495000000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1503495000000,
+                    "endTime": 1503504000000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1503504000000,
+                    "endTime": 1503558000000
+                }
+            ]
+        },
+        {
+            "date": "2017-08-24",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1503558000000,
+                    "endTime": 1503577800000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1503577800000,
+                    "endTime": 1503581400000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1503581400000,
+                    "endTime": 1503590400000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1503590400000,
+                    "endTime": 1503644400000
+                }
+            ]
+        },
+        {
+            "date": "2017-08-25",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1503644400000,
+                    "endTime": 1503664200000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1503664200000,
+                    "endTime": 1503667800000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1503667800000,
+                    "endTime": 1503676800000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1503676800000,
+                    "endTime": 1503730800000
+                }
+            ]
+        },
+        {
+            "date": "2017-08-26",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1503730800000,
+                    "endTime": 1503817200000
+                }
+            ]
+        },
+        {
+            "date": "2017-08-28",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1503903600000,
+                    "endTime": 1503923400000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1503923400000,
+                    "endTime": 1503927000000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1503927000000,
+                    "endTime": 1503936000000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1503936000000,
+                    "endTime": 1503990000000
+                }
+            ]
+        },
+        {
+            "date": "2017-08-29",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1503990000000,
+                    "endTime": 1504009800000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1504009800000,
+                    "endTime": 1504013400000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1504013400000,
+                    "endTime": 1504022400000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1504022400000,
+                    "endTime": 1504076400000
+                }
+            ]
+        },
+        {
+            "date": "2017-08-30",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1504076400000,
+                    "endTime": 1504096200000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1504096200000,
+                    "endTime": 1504099800000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1504099800000,
+                    "endTime": 1504108800000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1504108800000,
+                    "endTime": 1504162800000
+                }
+            ]
+        },
+        {
+            "date": "2017-08-31",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1504162800000,
+                    "endTime": 1504182600000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1504182600000,
+                    "endTime": 1504186200000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1504186200000,
+                    "endTime": 1504195200000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1504195200000,
+                    "endTime": 1504249200000
+                }
+            ]
+        },
+        {
+            "date": "2017-09-01",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1504249200000,
+                    "endTime": 1504269000000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1504269000000,
+                    "endTime": 1504272600000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1504272600000,
+                    "endTime": 1504281600000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1504281600000,
+                    "endTime": 1504335600000
+                }
+            ]
+        },
+        {
+            "date": "2017-09-02",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1504335600000,
+                    "endTime": 1504422000000
+                }
+            ]
+        },
+        {
+            "date": "2017-09-04",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1504508400000,
+                    "endTime": 1504528200000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1504528200000,
+                    "endTime": 1504531800000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1504531800000,
+                    "endTime": 1504540800000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1504540800000,
+                    "endTime": 1504594800000
+                }
+            ]
+        },
+        {
+            "date": "2017-09-05",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1504594800000,
+                    "endTime": 1504614600000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1504614600000,
+                    "endTime": 1504618200000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1504618200000,
+                    "endTime": 1504627200000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1504627200000,
+                    "endTime": 1504681200000
+                }
+            ]
+        },
+        {
+            "date": "2017-09-06",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1504681200000,
+                    "endTime": 1504701000000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1504701000000,
+                    "endTime": 1504704600000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1504704600000,
+                    "endTime": 1504713600000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1504713600000,
+                    "endTime": 1504767600000
+                }
+            ]
+        },
+        {
+            "date": "2017-09-07",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1504767600000,
+                    "endTime": 1504787400000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1504787400000,
+                    "endTime": 1504791000000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1504791000000,
+                    "endTime": 1504800000000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1504800000000,
+                    "endTime": 1504854000000
+                }
+            ]
+        },
+        {
+            "date": "2017-09-08",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1504854000000,
+                    "endTime": 1504873800000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1504873800000,
+                    "endTime": 1504877400000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1504877400000,
+                    "endTime": 1504886400000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1504886400000,
+                    "endTime": 1504940400000
+                }
+            ]
+        },
+        {
+            "date": "2017-09-09",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1504940400000,
+                    "endTime": 1505026800000
+                }
+            ]
+        },
+        {
+            "date": "2017-09-11",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1505113200000,
+                    "endTime": 1505133000000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1505133000000,
+                    "endTime": 1505136600000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1505136600000,
+                    "endTime": 1505145600000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1505145600000,
+                    "endTime": 1505199600000
+                }
+            ]
+        },
+        {
+            "date": "2017-09-12",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1505199600000,
+                    "endTime": 1505219400000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1505219400000,
+                    "endTime": 1505223000000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1505223000000,
+                    "endTime": 1505232000000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1505232000000,
+                    "endTime": 1505286000000
+                }
+            ]
+        },
+        {
+            "date": "2017-09-13",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1505286000000,
+                    "endTime": 1505305800000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1505305800000,
+                    "endTime": 1505309400000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1505309400000,
+                    "endTime": 1505318400000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1505318400000,
+                    "endTime": 1505372400000
+                }
+            ]
+        },
+        {
+            "date": "2017-09-14",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1505372400000,
+                    "endTime": 1505392200000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1505392200000,
+                    "endTime": 1505395800000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1505395800000,
+                    "endTime": 1505404800000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1505404800000,
+                    "endTime": 1505458800000
+                }
+            ]
+        },
+        {
+            "date": "2017-09-15",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1505458800000,
+                    "endTime": 1505478600000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1505478600000,
+                    "endTime": 1505482200000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1505482200000,
+                    "endTime": 1505491200000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1505491200000,
+                    "endTime": 1505545200000
+                }
+            ]
+        },
+        {
+            "date": "2017-09-16",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1505545200000,
+                    "endTime": 1505631600000
+                }
+            ]
+        },
+        {
+            "date": "2017-09-18",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1505718000000,
+                    "endTime": 1505737800000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1505737800000,
+                    "endTime": 1505741400000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1505741400000,
+                    "endTime": 1505750400000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1505750400000,
+                    "endTime": 1505804400000
+                }
+            ]
+        },
+        {
+            "date": "2017-09-19",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1505804400000,
+                    "endTime": 1505824200000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1505824200000,
+                    "endTime": 1505827800000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1505827800000,
+                    "endTime": 1505836800000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1505836800000,
+                    "endTime": 1505890800000
+                }
+            ]
+        },
+        {
+            "date": "2017-09-20",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1505890800000,
+                    "endTime": 1505910600000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1505910600000,
+                    "endTime": 1505914200000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1505914200000,
+                    "endTime": 1505923200000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1505923200000,
+                    "endTime": 1505977200000
+                }
+            ]
+        },
+        {
+            "date": "2017-09-21",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1505977200000,
+                    "endTime": 1505997000000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1505997000000,
+                    "endTime": 1506000600000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1506000600000,
+                    "endTime": 1506009600000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1506009600000,
+                    "endTime": 1506063600000
+                }
+            ]
+        },
+        {
+            "date": "2017-09-22",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1506063600000,
+                    "endTime": 1506083400000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1506083400000,
+                    "endTime": 1506087000000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1506087000000,
+                    "endTime": 1506096000000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1506096000000,
+                    "endTime": 1506150000000
+                }
+            ]
+        },
+        {
+            "date": "2017-09-23",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1506150000000,
+                    "endTime": 1506236400000
+                }
+            ]
+        },
+        {
+            "date": "2017-09-25",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1506322800000,
+                    "endTime": 1506342600000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1506342600000,
+                    "endTime": 1506346200000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1506346200000,
+                    "endTime": 1506355200000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1506355200000,
+                    "endTime": 1506409200000
+                }
+            ]
+        },
+        {
+            "date": "2017-09-26",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1506409200000,
+                    "endTime": 1506429000000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1506429000000,
+                    "endTime": 1506432600000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1506432600000,
+                    "endTime": 1506441600000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1506441600000,
+                    "endTime": 1506495600000
+                }
+            ]
+        },
+        {
+            "date": "2017-09-27",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1506495600000,
+                    "endTime": 1506515400000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1506515400000,
+                    "endTime": 1506519000000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1506519000000,
+                    "endTime": 1506528000000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1506528000000,
+                    "endTime": 1506582000000
+                }
+            ]
+        },
+        {
+            "date": "2017-09-28",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1506582000000,
+                    "endTime": 1506601800000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1506601800000,
+                    "endTime": 1506605400000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1506605400000,
+                    "endTime": 1506614400000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1506614400000,
+                    "endTime": 1506668400000
+                }
+            ]
+        },
+        {
+            "date": "2017-09-29",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1506668400000,
+                    "endTime": 1506688200000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1506688200000,
+                    "endTime": 1506691800000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1506691800000,
+                    "endTime": 1506700800000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1506700800000,
+                    "endTime": 1506754800000
+                }
+            ]
+        },
+        {
+            "date": "2017-09-30",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1506754800000,
+                    "endTime": 1506841200000
+                }
+            ]
+        },
+        {
+            "date": "2017-10-02",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1506927600000,
+                    "endTime": 1506947400000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1506947400000,
+                    "endTime": 1506951000000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1506951000000,
+                    "endTime": 1506960000000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1506960000000,
+                    "endTime": 1507014000000
+                }
+            ]
+        },
+        {
+            "date": "2017-10-03",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1507014000000,
+                    "endTime": 1507033800000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1507033800000,
+                    "endTime": 1507037400000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1507037400000,
+                    "endTime": 1507046400000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1507046400000,
+                    "endTime": 1507100400000
+                }
+            ]
+        },
+        {
+            "date": "2017-10-04",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1507100400000,
+                    "endTime": 1507120200000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1507120200000,
+                    "endTime": 1507123800000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1507123800000,
+                    "endTime": 1507132800000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1507132800000,
+                    "endTime": 1507186800000
+                }
+            ]
+        },
+        {
+            "date": "2017-10-05",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1507186800000,
+                    "endTime": 1507206600000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1507206600000,
+                    "endTime": 1507210200000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1507210200000,
+                    "endTime": 1507219200000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1507219200000,
+                    "endTime": 1507273200000
+                }
+            ]
+        },
+        {
+            "date": "2017-10-06",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1507273200000,
+                    "endTime": 1507293000000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1507293000000,
+                    "endTime": 1507296600000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1507296600000,
+                    "endTime": 1507305600000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1507305600000,
+                    "endTime": 1507359600000
+                }
+            ]
+        },
+        {
+            "date": "2017-10-07",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1507359600000,
+                    "endTime": 1507446000000
+                }
+            ]
+        },
+        {
+            "date": "2017-10-09",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1507532400000,
+                    "endTime": 1507552200000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1507552200000,
+                    "endTime": 1507555800000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1507555800000,
+                    "endTime": 1507564800000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1507564800000,
+                    "endTime": 1507618800000
+                }
+            ]
+        },
+        {
+            "date": "2017-10-10",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1507618800000,
+                    "endTime": 1507638600000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1507638600000,
+                    "endTime": 1507642200000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1507642200000,
+                    "endTime": 1507651200000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1507651200000,
+                    "endTime": 1507705200000
+                }
+            ]
+        },
+        {
+            "date": "2017-10-11",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1507705200000,
+                    "endTime": 1507725000000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1507725000000,
+                    "endTime": 1507728600000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1507728600000,
+                    "endTime": 1507737600000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1507737600000,
+                    "endTime": 1507791600000
+                }
+            ]
+        },
+        {
+            "date": "2017-10-12",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1507791600000,
+                    "endTime": 1507811400000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1507811400000,
+                    "endTime": 1507815000000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1507815000000,
+                    "endTime": 1507824000000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1507824000000,
+                    "endTime": 1507878000000
+                }
+            ]
+        },
+        {
+            "date": "2017-10-13",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1507878000000,
+                    "endTime": 1507897800000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1507897800000,
+                    "endTime": 1507901400000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1507901400000,
+                    "endTime": 1507910400000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1507910400000,
+                    "endTime": 1507964400000
+                }
+            ]
+        },
+        {
+            "date": "2017-10-14",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1507964400000,
+                    "endTime": 1508050800000
+                }
+            ]
+        },
+        {
+            "date": "2017-10-16",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1508137200000,
+                    "endTime": 1508157000000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1508157000000,
+                    "endTime": 1508160600000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1508160600000,
+                    "endTime": 1508169600000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1508169600000,
+                    "endTime": 1508223600000
+                }
+            ]
+        },
+        {
+            "date": "2017-10-17",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1508223600000,
+                    "endTime": 1508243400000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1508243400000,
+                    "endTime": 1508247000000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1508247000000,
+                    "endTime": 1508256000000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1508256000000,
+                    "endTime": 1508310000000
+                }
+            ]
+        },
+        {
+            "date": "2017-10-18",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1508310000000,
+                    "endTime": 1508329800000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1508329800000,
+                    "endTime": 1508333400000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1508333400000,
+                    "endTime": 1508342400000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1508342400000,
+                    "endTime": 1508396400000
+                }
+            ]
+        },
+        {
+            "date": "2017-10-19",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1508396400000,
+                    "endTime": 1508416200000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1508416200000,
+                    "endTime": 1508419800000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1508419800000,
+                    "endTime": 1508428800000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1508428800000,
+                    "endTime": 1508482800000
+                }
+            ]
+        },
+        {
+            "date": "2017-10-20",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1508482800000,
+                    "endTime": 1508502600000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1508502600000,
+                    "endTime": 1508506200000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1508506200000,
+                    "endTime": 1508515200000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1508515200000,
+                    "endTime": 1508569200000
+                }
+            ]
+        },
+        {
+            "date": "2017-10-21",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1508569200000,
+                    "endTime": 1508655600000
+                }
+            ]
+        },
+        {
+            "date": "2017-10-23",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1508742000000,
+                    "endTime": 1508761800000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1508761800000,
+                    "endTime": 1508765400000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1508765400000,
+                    "endTime": 1508774400000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1508774400000,
+                    "endTime": 1508828400000
+                }
+            ]
+        },
+        {
+            "date": "2017-10-24",
+            "scheduledActivities": [
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1508828400000,
+                    "endTime": 1508848200000
+                },
+                {
+                    "activityDetailName": "Lunch",
+                    "activityType": "lunch",
+                    "activityTypeLabel": "Lunch",
+                    "paid": false,
+                    "startTime": 1508848200000,
+                    "endTime": 1508851800000
+                },
+                {
+                    "activityDetailName": "PT - EMEA",
+                    "activityType": "in_service",
+                    "activityTypeLabel": "In Service",
+                    "paid": true,
+                    "startTime": 1508851800000,
+                    "endTime": 1508860800000
+                },
+                {
+                    "activityDetailName": null,
+                    "activityType": "not_available",
+                    "activityTypeLabel": "Not Available",
+                    "paid": false,
+                    "startTime": 1508860800000,
+                    "endTime": 1508914800000
+                }
+            ]
+        }
+    ],
+    "agentId": 704,
+    "agentTimeZone": "Europe/Amsterdam"
+}
+
+
+') v;
+
+
+
+-----------------------------------------------------

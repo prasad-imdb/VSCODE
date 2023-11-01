@@ -1,0 +1,52 @@
+
+--self join 
+SELECT 
+    p."genre" "parent_genre", 
+    c."genre" "sub_genre"
+FROM "PRASADKUMAR_BODDU"."genres" c
+INNER JOIN "PRASADKUMAR_BODDU"."genres" P
+ON TO_NVARCHAR(p."genre_id") = TO_NVARCHAR(c."parent_id")
+ORDER BY 
+    "parent_genre", 
+    "sub_genre";
+
+
+--SUB QUERY
+
+SELECT "title", "rating", "publisher_id"
+FROM "books"
+WHERE TO_NVARCHAR("publisher_id") IN (
+SELECT TO_NVARCHAR("publisher_id") "publisher_id"
+FROM "publishers"
+WHERE "name" LIKE '%Oxford%'
+);
+
+--with Clause
+
+WITH cte AS(
+    SELECT 
+        p."name", 
+        AVG(b."rating") "avg_rating"
+    FROM 
+        "books" b
+    INNER JOIN "publishers" p
+    ON to_nvarchar(b."publisher_id") = to_nvarchar(p."publisher_id")
+    GROUP BY 
+        p."name"
+)
+SELECT 
+    "name", 
+    "avg_rating"
+FROM 
+    cte 
+WHERE 
+    "avg_rating" = (SELECT MAX("avg_rating") FROM cte);
+
+
+--row_number
+
+SELECT 
+    "book_id", 
+    "title", 
+    ROW_NUMBER() OVER (partition by "title"  ORDER BY "published_date") row_num
+FROM "books";

@@ -1,0 +1,624 @@
+CREATE TABLE PRASAD.SCHEMA.album (
+  id INTEGER PRIMARY KEY,
+  title NVARCHAR(255),
+  artist NVARCHAR(255),
+  label NVARCHAR(255),
+  released NVARCHAR(255)
+)
+data_retention_time_in_days=90;
+
+CREATE TABLE PRASAD.SCHEMA.TRACK (
+  id INTEGER PRIMARY KEY,
+  album_id INTEGER,
+  title NVARCHAR(255) DEFAULT NULL,
+  track_number INTEGER DEFAULT NULL,
+  duration INTEGER DEFAULT NULL
+)
+data_retention_time_in_days=90;
+
+
+INSERT INTO PRASAD.SCHEMA.album (id, title, artist, label, released) VALUES (1,'Two Men with the Blues','Willie Nelson and Wynton Marsalis','Blue Note','2008-07-08');
+INSERT INTO PRASAD.SCHEMA.album (id, title, artist, label, released) VALUES (11,'Hendrix in the West','Jimi Hendrix','Polydor','1972-01-00');
+INSERT INTO PRASAD.SCHEMA.album (id, title, artist, label, released) VALUES (12,'Rubber Soul','The Beatles','Parlophone','1965-12-03');
+INSERT INTO PRASAD.SCHEMA.album (id, title, artist, label, released) VALUES (13,'Birds of Fire','Mahavishnu Orchestra','Columbia','1973-03-00');
+INSERT INTO PRASAD.SCHEMA.album (id, title, artist, label, released) VALUES (16,'Live And','Johnny Winter','Columbia','1971-05-00');
+INSERT INTO PRASAD.SCHEMA.album (id, title, artist, label, released) VALUES (17,'Apostrophe','Frank Zappa','DiscReet','1974-04-22');
+INSERT INTO PRASAD.SCHEMA.album (id, title, artist, label, released) VALUES (18,'Kind of Blue','Miles Davis','Columbia','1959-08-17');
+
+-- Insert data for table track
+
+INSERT INTO PRASAD.SCHEMA.TRACK (id, album_id, title, track_number, duration) VALUES (1,1,'Bright Lights Big City',1,320);
+INSERT INTO PRASAD.SCHEMA.TRACK (id, album_id, title, track_number, duration) VALUES (2,1,'Night Life',2,344);
+INSERT INTO PRASAD.SCHEMA.TRACK (id, album_id, title, track_number, duration) VALUES (3,1,'Basin Street Blues',5,296);
+INSERT INTO PRASAD.SCHEMA.TRACK (id, album_id, title, track_number, duration) VALUES (4,1,'Caldonia',3,205);
+INSERT INTO PRASAD.SCHEMA.TRACK (id, album_id, title, track_number, duration) VALUES (5,1,'Stardust',4,308);
+INSERT INTO PRASAD.SCHEMA.TRACK (id, album_id, title, track_number, duration) VALUES (6,1,'Georgia On My Mind',6,280);
+INSERT INTO PRASAD.SCHEMA.TRACK (id, album_id, title, track_number, duration) VALUES (7,1,'Rainy Day Blues',7,343);
+INSERT INTO PRASAD.SCHEMA.TRACK (id, album_id, title, track_number, duration) VALUES (8,1,'My Bucket''s Got A Hole In It',8,296);
+INSERT INTO PRASAD.SCHEMA.TRACK (id, album_id, title, track_number, duration) VALUES (9,1,'Ain''t Nobody''s Business',9,447);
+INSERT INTO PRASAD.SCHEMA.TRACK (id, album_id, title, track_number, duration) VALUES (10,1,'That''s All',10,368);
+INSERT INTO PRASAD.SCHEMA.TRACK (id, album_id, title, track_number, duration) VALUES (15,11,'Lover Man',2,185);
+INSERT INTO PRASAD.SCHEMA.TRACK (id, album_id, title, track_number, duration) VALUES (14,11,'Johnny B. Goode',1,285);
+INSERT INTO PRASAD.SCHEMA.TRACK (id, album_id, title, track_number, duration) VALUES (16,11,'Blue Suede Shoes',3,266);
+INSERT INTO PRASAD.SCHEMA.TRACK (id, album_id, title, track_number, duration) VALUES (17,11,'Voodoo Chile',4,469);
+INSERT INTO PRASAD.SCHEMA.TRACK (id, album_id, title, track_number, duration) VALUES (18,11,'The Queen',5,160);
+INSERT INTO PRASAD.SCHEMA.TRACK (id, album_id, title, track_number, duration) VALUES (19,11,'Sgt. Pepper''s Lonely Hearts Club Band',6,76);
+INSERT INTO PRASAD.SCHEMA.TRACK (id, album_id, title, track_number, duration) VALUES (20,11,'Little Wing',7,194);
+INSERT INTO PRASAD.SCHEMA.TRACK (id, album_id, title, track_number, duration) VALUES (21,11,'Red House',8,786);
+INSERT INTO PRASAD.SCHEMA.TRACK (id, album_id, title, track_number, duration) VALUES (22,12,'Drive My Car',1,150);
+INSERT INTO PRASAD.SCHEMA.TRACK (id, album_id, title, track_number, duration) VALUES (23,12,'Norwegian Wood (This Bird Has Flown)',2,125);
+INSERT INTO PRASAD.SCHEMA.TRACK (id, album_id, title, track_number, duration) VALUES (24,12,'You Won''t See Me',3,202);
+INSERT INTO PRASAD.SCHEMA.TRACK (id, album_id, title, track_number, duration) VALUES (25,12,'Nowhere Man',4,164);
+INSERT INTO PRASAD.SCHEMA.TRACK (id, album_id, title, track_number, duration) VALUES (26,12,'Think for Yourself',5,139);
+INSERT INTO PRASAD.SCHEMA.TRACK (id, album_id, title, track_number, duration) VALUES (27,12,'The Word',6,163);
+INSERT INTO PRASAD.SCHEMA.TRACK (id, album_id, title, track_number, duration) VALUES (28,12,'Michelle',7,162);
+INSERT INTO PRASAD.SCHEMA.TRACK (id, album_id, title, track_number, duration) VALUES (29,12,'What Goes On',8,170);
+INSERT INTO PRASAD.SCHEMA.TRACK (id, album_id, title, track_number, duration) VALUES (30,12,'Girl',9,153);
+INSERT INTO PRASAD.SCHEMA.TRACK (id, album_id, title, track_number, duration) VALUES (31,12,'I''m Looking Through You',10,147);
+INSERT INTO PRASAD.SCHEMA.TRACK (id, album_id, title, track_number, duration) VALUES (32,12,'In My Life',11,147);
+INSERT INTO PRASAD.SCHEMA.TRACK (id, album_id, title, track_number, duration) VALUES (33,12,'Wait',12,136);
+INSERT INTO PRASAD.SCHEMA.TRACK (id, album_id, title, track_number, duration) VALUES (34,12,'If I Needed Someone',13,143);
+INSERT INTO PRASAD.SCHEMA.TRACK (id, album_id, title, track_number, duration) VALUES (35,12,'Run for Your Life',14,138);
+INSERT INTO PRASAD.SCHEMA.TRACK (id, album_id, title, track_number, duration) VALUES (37,13,'Birds of Fire',1,350);
+INSERT INTO PRASAD.SCHEMA.TRACK (id, album_id, title, track_number, duration) VALUES (38,13,'Miles Beyond',2,287);
+INSERT INTO PRASAD.SCHEMA.TRACK (id, album_id, title, track_number, duration) VALUES (39,13,'Celestial Terrestrial Commuters',3,174);
+INSERT INTO PRASAD.SCHEMA.TRACK (id, album_id, title, track_number, duration) VALUES (40,13,'Sapphire Bullets of Pure Love',4,24);
+INSERT INTO PRASAD.SCHEMA.TRACK (id, album_id, title, track_number, duration) VALUES (41,13,'Thousand Island Park',5,203);
+INSERT INTO PRASAD.SCHEMA.TRACK (id, album_id, title, track_number, duration) VALUES (42,13,'Hope',6,119);
+INSERT INTO PRASAD.SCHEMA.TRACK (id, album_id, title, track_number, duration) VALUES (43,13,'One Word',7,597);
+INSERT INTO PRASAD.SCHEMA.TRACK (id, album_id, title, track_number, duration) VALUES (44,13,'Sanctuary',8,305);
+INSERT INTO PRASAD.SCHEMA.TRACK (id, album_id, title, track_number, duration) VALUES (45,13,'Open Country Joy',9,236);
+INSERT INTO PRASAD.SCHEMA.TRACK (id, album_id, title, track_number, duration) VALUES (46,13,'Resolution',10,129);
+INSERT INTO PRASAD.SCHEMA.TRACK (id, album_id, title, track_number, duration) VALUES (51,16,'It''s My Own Fault',2,734);
+INSERT INTO PRASAD.SCHEMA.TRACK (id, album_id, title, track_number, duration) VALUES (50,16,'Good Morning Little Schoolgirl',1,285);
+INSERT INTO PRASAD.SCHEMA.TRACK (id, album_id, title, track_number, duration) VALUES (52,16,'Jumpin'' Jack Flash',3,266);
+INSERT INTO PRASAD.SCHEMA.TRACK (id, album_id, title, track_number, duration) VALUES (53,16,'Rock And Roll Medley',4,406);
+INSERT INTO PRASAD.SCHEMA.TRACK (id, album_id, title, track_number, duration) VALUES (54,16,'Mean Town Blues',5,539);
+INSERT INTO PRASAD.SCHEMA.TRACK (id, album_id, title, track_number, duration) VALUES (55,16,'Johnny B. Goode',6,202);
+INSERT INTO PRASAD.SCHEMA.TRACK (id, album_id, title, track_number, duration) VALUES (56,17,'Don''t Eat the Yellow Snow',1,127);
+INSERT INTO PRASAD.SCHEMA.TRACK (id, album_id, title, track_number, duration) VALUES (57,17,'Nanook Rubs It',2,278);
+INSERT INTO PRASAD.SCHEMA.TRACK (id, album_id, title, track_number, duration) VALUES (58,17,'St. Alfonzo''s Pancake Breakfast',3,110);
+INSERT INTO PRASAD.SCHEMA.TRACK (id, album_id, title, track_number, duration) VALUES (59,17,'Father O''Blivion',4,138);
+INSERT INTO PRASAD.SCHEMA.TRACK (id, album_id, title, track_number, duration) VALUES (60,17,'Cosmik Debris',5,254);
+INSERT INTO PRASAD.SCHEMA.TRACK (id, album_id, title, track_number, duration) VALUES (61,17,'Excentrifugal Forz',6,93);
+INSERT INTO PRASAD.SCHEMA.TRACK (id, album_id, title, track_number, duration) VALUES (62,17,'Apostrophe',7,350);
+INSERT INTO PRASAD.SCHEMA.TRACK (id, album_id, title, track_number, duration) VALUES (63,17,'Uncle Remus',8,164);
+INSERT INTO PRASAD.SCHEMA.TRACK (id, album_id, title, track_number, duration) VALUES (64,17,'Stink-Foot',9,393);
+INSERT INTO PRASAD.SCHEMA.TRACK (id, album_id, title, track_number, duration) VALUES (65,18,'So What',1,565);
+INSERT INTO PRASAD.SCHEMA.TRACK (id, album_id, title, track_number, duration) VALUES (66,18,'Freddy Freeloader',2,589);
+INSERT INTO PRASAD.SCHEMA.TRACK (id, album_id, title, track_number, duration) VALUES (67,18,'Blue in Green',3,338);
+INSERT INTO PRASAD.SCHEMA.TRACK (id, album_id, title, track_number, duration) VALUES (68,18,'All Blues',4,696);
+INSERT INTO PRASAD.SCHEMA.TRACK (id, album_id, title, track_number, duration) VALUES (69,18,'Flamenco Sketches',5,566);
+INSERT INTO PRASAD.SCHEMA.TRACK (id, album_id, title, track_number, duration) VALUES (70,11,'Fake Track',9,549);
+COMMIT;
+
+SELECT COUNT(*) FROM PRASAD.SCHEMA.TRACK
+
+--------------------------------------------------------------------------------------------------------------------------------
+#1---CACHE USES 
+--------------------------------------------------------------------------------------------------------------------------------
+alter warehouse compute_wh suspend;
+select count(*) from "PRASAD"."SCHEMA"."TRACK"; --It will fetch from metadata (it wont use COMPUTE_WH Warehouse)
+select * from "PRASAD"."SCHEMA"."TRACK"; --Uses warehouse COMPUTE_WH
+-- run same query one more time
+select * from "PRASAD"."SCHEMA"."TRACK"; --It will fetch data from cache and with less processing time and Utilisation
+
+-- using where condition and  below 2 queries uses cache and 3rd one will not use cache
+select * 
+from "PRASAD"."SCHEMA"."TRACK"
+WHERE TRACK_NUMBER <= 5;
+
+select * 
+from "PRASAD"."SCHEMA"."TRACK"
+WHERE TRACK_NUMBER = 5;
+
+
+select * 
+from "PRASAD"."SCHEMA"."TRACK"
+WHERE TRACK_NUMBER > 5;
+
+SELECT current_session();
+-- While working on a complex query, results of previous query comes handy
+
+select * from "SNOWFLAKE_SAMPLE_DATA"."TPCDS_SF100TCL"."CATALOG_PAGE";
+
+select  cp_Department, cp_catalog_page_sk, cp_Description
+    from table(result_scan(last_query_id()))
+  where cp_catalog_page_sk < 6;
+
+
+--------------------------------------------------------------------------------------------------------------------------------
+#2--Query History
+--------------------------------------------------------------------------------------------------------------------------------
+
+-- Retrieve up to the last 100 queries run in the current session:
+select *
+from table(information_schema.query_history_by_session())
+order by start_time;
+
+select *
+from table(information_schema.query_history_by_warehouse())
+order by start_time;
+
+select *
+from table(information_schema.query_history_by_user())
+order by start_time;
+
+-- include a condition on username
+select *
+from table(information_schema.query_history_by_user())
+where user_name like 'AMAN%'
+order by start_time;
+
+
+-- Retrieve up to the last 100 queries run by the current user (or run by any user on any warehouse on which the current user has the MONITOR privilege):
+
+select *
+from table(information_schema.query_history())
+order by start_time;
+
+-- Retrieve up to the last 100 queries run in the past hour by the current user 
+-- (or run by any user on any warehouse on which the current user has the MONITOR privilege):
+
+select *
+from table(information_schema.query_history(dateadd('hours',-1,current_timestamp()),current_timestamp()))
+order by start_time;
+
+
+-- Retrieve all queries run by the current user (or run by any user on any warehouse on which the current user has the MONITOR privilege) 
+-- within a specified 30 minute block of time within the past 7 days:
+
+SELECT CURRENT_TIMESTAMP()
+
+select *
+  from table(information_schema.query_history(
+  end_time_range_start=>to_timestamp_ltz('2021-09-13 20:28:42.988 -0700'),
+    end_time_range_end=>to_timestamp_ltz('2021-09-13 23:28:42.988 -0700')));
+
+
+
+
+--------------------------------------------------------------------------------------------------------------------------------
+#3--TYPES OF TABLES AND CLONE
+--------------------------------------------------------------------------------------------------------------------------------
+create or replace table PRASAD.SCHEMA.album_p clone PRASAD.SCHEMA.album;
+create or replace transient table PRASAD.SCHEMA.album_t clone PRASAD.SCHEMA.album;                    
+create or replace temporary table PRASAD.SCHEMA.album_temp clone PRASAD.SCHEMA.album;
+                     
+show tables;
+
+
+--CLONING OBJECTS
+  
+ select * from 
+ "PRASAD"."SCHEMA"."ALBUM"
+  
+ create table "PRASAD"."SCHEMA".restored_album clone "PRASAD"."SCHEMA"."ALBUM"
+  before(statement => '019f1c95-0000-232e-0000-00005c91e049');
+  
+  select current_timestamp();
+
+
+-- following CREATE TABLE command creates a clone of a table as of the date and time represented by the specified timestamp:
+create table "PRASAD"."SCHEMA".restored_album1 clone "PRASAD"."SCHEMA"."ALBUM"
+  at(timestamp => '2021-09-21 21:40:58.571 -0700'::timestamp);
+  
+-- following CREATE SCHEMA command creates a clone of a schema and all its objects as they existed 1 hour before the current time:
+create schema "PRASAD".restored_schema clone "PRASAD"."SCHEMA" at(offset => -600);
+
+-- following CREATE DATABASE command creates a clone of a database and all its objects as they existed prior to the completion of the specified statement:
+create database restored_db clone DEMO_DB
+  before(statement => '019f1c95-0000-232e-0000-00005c91e049');
+
+
+--------------------------------------------------------------------------------------------------------------------------------
+#4----TIMETRAVEL 
+--------------------------------------------------------------------------------------------------------------------------------
+
+select current_timestamp();
+
+ALTER SESSION SET TIMEZONE = 'UTC';
+
+select * from PRASAD.SCHEMA.album before(timestamp => '2021-09-08 02:41:47.979 +0000'::timestamp);
+
+
+-- query selects historical data from a table as of 5 minutes ago:
+
+select * from PRASAD.SCHEMA.album at(offset => -60*4);
+
+-- query selects historical data from a table up to, but not including any changes made by the specified statement:
+
+select * from PRASAD.SCHEMA.album before(statement => '019ecd62-0000-2297-0000-00005c9152d5');
+
+--------------------------------------------------------------------------------------------------------------------------------
+#5--DROPPING AND RESTORING OBJECTS
+When a table, schema, or database is dropped, it is not immediately overwritten or removed from the system. 
+Instead, it is retained for the data retention period for the object, during which time the object can be restored. 
+Once dropped objects are moved to Fail-safe, you cannot restore them.
+--------------------------------------------------------------------------------------------------------------------------------
+ 
+drop table "PRASAD"."SCHEMA"."ALBUM";
+show tables;
+undrop table "PRASAD"."SCHEMA"."ALBUM";
+show tables;
+select * from  "PRASAD"."SCHEMA"."ALBUM";
+
+show tables history like 'employees%' in PRASAD.SCHEMA;
+
+show schemas history in PRASAD;
+
+show databases history;
+
+drop database RESTORED_DB;
+drop schema PRASAD.RESTORED_SCHEMA;
+drop table PRASAD.SCHEMA.RESTORED_ALBUM;
+
+undrop database RESTORED_DB;
+undrop schema PRASAD.RESTORED_SCHEMA;
+undrop table PRASAD.SCHEMA.RESTORED_ALBUM;
+--------------------------------------------------------------------------------------------------------------------------------
+#6 SET DATA_RETENTION_TIME_IN_DAYS PROPERTY FOR TIME TRAVEL
+--------------------------------------------------------------------------------------------------------------------------------
+
+create or replace table employees(employee_id number,
+                     salary number,
+                     manager_id number)
+                   data_retention_time_in_days=90;
+                     
+SHOW TABLES;
+                     
+create or replace table employees_test(employee_id number,
+                     salary number,
+                     manager_id number)
+                     data_retention_time_in_days=95;
+                     
+alter table employees set data_retention_time_in_days=30;
+
+SHOW TABLES;
+
+
+-- If retention period is changed for account or individual objects then retention period will be changed for all lower level objects as well unless explicitly set
+
+USE SCHEMA PRASAD.SCHEMA;
+
+create or replace table employees_new(employee_id number,
+                     salary number,
+                     manager_id number)
+                   data_retention_time_in_days=90;
+                     
+insert into employees values(8,40000,4),
+                                 (12,50000,9),
+                                 (3,30000,5),
+                                 (4,10000,5),
+                                 (25,35000,9),
+                                 (12,50000,9),
+                                 (86,90000,4),
+                                 (73,20000,1);
+                     
+SHOW TABLES;
+
+create or replace transient table employees_transient(employee_id number,
+                     salary number,
+                     manager_id number);
+                     
+create or replace temporary table employees_temp(employee_id number,
+                     salary number,
+                     manager_id number);
+                     
+show tables;
+
+
+SHOW SCHEMAS;
+
+SELECT * FROM PRASAD.INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'SCHEMA';
+
+ALTER SCHEMA PRASAD.SCHEMA set data_retention_time_in_days=55;
+
+SHOW SCHEMAS;
+
+SELECT * FROM PRASAD.INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'SCHEMA';
+
+--------------------------------------------------------------------------------------------------------------------------------
+#7 TASKS AND SCHEDULES
+--------------------------------------------------------------------------------------------------------------------------------
+
+CREATE TABLE EMPLOYEE(EMPLOYEE_ID INTEGER AUTOINCREMENT START = 1 INCREMENT = 1,
+                       EMPLOYEE_NAME VARCHAR DEFAULT 'PRASAD',
+                       LOAD_TIME DATE);
+
+CREATE OR REPLACE TASK EMPLOYEE_TASK
+  WAREHOUSE = COMPUTE_WH
+  SCHEDULE = '1 MINUTE'
+AS
+ INSERT INTO EMPLOYEE(LOAD_TIME) VALUES(CURRENT_TIMESTAMP);
+ 
+
+SHOW TASKS;
+
+
+ALTER TASK EMPLOYEE_TASK RESUME;
+ALTER TASK EMPLOYEE_TASK SUSPEND;
+
+
+DROP TASK EMPLOYEE_TASK
+
+
+CREATE OR REPLACE TASK EMPLOYEE_TASK1
+  WAREHOUSE = COMPUTE_WH
+  SCHEDULE = '1440 MINUTES'
+  --'USING CRON 0 0 10-20 * TUE,THU UTC''
+AS
+ INSERT INTO EMPLOYEE(LOAD_TIME) VALUES(CURRENT_TIMESTAMP);
+ 
+
+SHOW TASKS;
+
+
+ALTER TASK EMPLOYEE_TASK1 RESUME;
+ALTER TASK EMPLOYEE_TASK SUSPEND;
+
+---- Retrieve the 100 most recent task executions (completed, still running, or scheduled in the future)
+select *
+  from table(information_schema.task_history())
+  order by scheduled_time;
+  
+---- Retrieve the execution history for tasks in the account within a specified 60 minute block of time within the past 7 days:
+select current_timestamp();
+
+select *
+  from table(information_schema.task_history(
+    scheduled_time_range_start=>to_timestamp_ltz('2021-09-21 22:50:33.741 -0700'),
+    scheduled_time_range_end=>to_timestamp_ltz('2021-09-21 22:58:33.741 -0700')));
+
+---- Retrieve the 10 most recent executions of a specified task (completed, still running, or scheduled in the future) scheduled within the last hour
+select *
+  from table(information_schema.task_history(
+    scheduled_time_range_start=>dateadd('hour',-0.3,current_timestamp()),
+    result_limit => 10,
+    task_name=>'EMPLOYEE_TASK'));
+
+--------------------------------------------------------------------------------------------------------------------------------
+#7 TREE TASKS AND SCHEDULES
+--------------------------------------------------------------------------------------------------------------------------------
+
+CREATE TABLE EMP(EMPLOYEE_ID INTEGER AUTOINCREMENT START = 1 INCREMENT = 1,
+                       EMPLOYEE_NAME VARCHAR DEFAULT 'HRTEST',
+                       LOAD_TIME DATE);
+
+
+CREATE OR REPLACE TASK EMPLOYEES_TASK2
+  WAREHOUSE = COMPUTE_WH
+  SCHEDULE = '1 MINUTE'
+AS
+ INSERT INTO EMP(LOAD_TIME) VALUES(CURRENT_TIMESTAMP);
+ 
+
+SHOW TASKS;
+
+
+ALTER TASK EMPLOYEES_TASK2 RESUME;
+ALTER TASK EMPLOYEES_TASK2 SUSPEND;
+
+
+
+-- First Copy of Employees table
+CREATE TABLE EMPLOYEES_COPY(EMPLOYEE_ID INTEGER,
+                       EMPLOYEE_NAME VARCHAR,
+                       LOAD_TIME DATE);
+
+CREATE OR REPLACE TASK EMPLOYEES_COPY_TASK
+  WAREHOUSE = COMPUTE_WH
+  AFTER EMPLOYEES_TASK2
+AS
+INSERT INTO EMPLOYEES_COPY(EMPLOYEE_ID, EMPLOYEE_NAME, LOAD_TIME) SELECT * FROM EMP;
+
+
+-- Second Copy of Employees table
+CREATE TABLE EMPLOYEES_COPY2(EMPLOYEE_ID INTEGER,
+                       EMPLOYEE_NAME VARCHAR,
+                       LOAD_TIME DATE);
+
+
+ALTER TASK EMPLOYEES_TASK2 SUSPEND;
+
+CREATE or replace TASK EMPLOYEES_COPY_TASK2
+  WAREHOUSE = COMPUTE_WH
+  AFTER EMPLOYEES_TASK2
+AS
+INSERT INTO EMPLOYEES_COPY2(EMPLOYEE_ID, EMPLOYEE_NAME, LOAD_TIME) SELECT * FROM EMP;
+
+
+ALTER TASK EMPLOYEES_COPY_TASK2 RESUME;
+ALTER TASK EMPLOYEES_COPY_TASK RESUME;
+ALTER TASK EMPLOYEES_TASK2 RESUME;
+
+ALTER TASK EMPLOYEES_TASK2 SUSPEND;
+ALTER TASK EMPLOYEES_COPY_TASK SUSPEND;
+ALTER TASK EMPLOYEES_COPY_TASK2 SUSPEND;
+
+SHOW TASKS;
+
+truncate table employees;
+
+--------------------------------------------------------------------------------------------------------------------------------
+#8 TASK FOR STORED PROC AND SCHEDULES
+--------------------------------------------------------------------------------------------------------------------------------
+CREATE OR REPLACE TABLE EMP1(EMPLOYEE_ID INTEGER AUTOINCREMENT START = 1 INCREMENT = 1,
+                       EMPLOYEE_NAME VARCHAR DEFAULT 'Munna',
+                       LOAD_TIME DATE);
+
+
+-- Stored procedure that INSERTS data TO a table
+-- The INSERT statement in the stored procedure COPIES data to EMPLOYEES table
+create or replace procedure load_employees_data(TODAY_DATE varchar)
+  returns string not null
+  language javascript
+  as
+  $$
+    var sql_command = 'INSERT INTO EMP1(LOAD_TIME) VALUES(:1);'
+    snowflake.execute(
+        { 
+        sqlText: sql_command, 
+        binds: [TODAY_DATE] 
+        }
+        ); 
+  return "SUCCEEDED"; 
+  $$;
+
+-- Task that calls the stored procedure every minute
+create or replace task employees_load_task
+  warehouse = COMPUTE_WH
+  schedule = '1 minute'
+as
+  call load_employees_data(CURRENT_TIMESTAMP);
+  
+
+ALTER TASK employees_load_task RESUME;
+ALTER TASK employees_load_task SUSPEND;
+
+
+
+desc task employees_load_task;
+
+
+
+TRUNCATE TABLE EMPLOYEES;
+
+SHOW TASKS;
+
+
+--------------------------------------------------------------------------------------------------------------------------------
+#9 Streaming 
+--------------------------------------------------------------------------------------------------------------------------------
+
+/*
+-- There are 3 types of Streams in Snowflake:
+    - Standard
+    - Append only
+    - Insert only
+*/
+
+--------------------------------------------------------------------------------------
+---------------------------------- STANDARD STREAMS ----------------------------------
+--------------------------------------------------------------------------------------
+
+-------------------- EXAMPLE 1  INSERTS------------------------
+-- Create a table to store the details of employees
+create or replace table ST_EMP(employee_id number,
+                    salary number,
+                     manager_id number);
+
+-- Create a stream to track changes to data in the EMPLOYEES table
+create or replace stream employees_stream on table ST_EMP;
+
+SHOW STREAMS;
+
+DESCRIBE STREAM employees_stream;
+
+SELECT SYSTEM$STREAM_GET_TABLE_TIMESTAMP('employees_stream');
+
+SELECT to_timestamp(SYSTEM$STREAM_GET_TABLE_TIMESTAMP('employees_stream')) as stream_offset;
+
+-- insert values in employees table
+insert into ST_EMP values(8,40000,4),
+                                 (12,50000,9),
+                                 (3,30000,5),
+                                 (4,10000,5),
+                                 (25,35000,9);
+                              
+
+insert into ST_EMP values(14,40000,4),
+                                 (10,50000,9),
+                                 (11,30000,5),
+                                 (12,10000,5),
+                                 (13,35000,9);
+-- The stream records the inserted rows
+select * from employees_stream;
+
+
+-- Consume the stream
+create or replace table employees_consumer(employee_id number,
+                     salary number);
+                     
+insert into employees_consumer select employee_id, salary from employees_stream;
+
+select * from employees_consumer;
+
+SELECT SYSTEM$STREAM_GET_TABLE_TIMESTAMP('employees_stream');
+
+SELECT to_timestamp(SYSTEM$STREAM_GET_TABLE_TIMESTAMP('employees_stream')) as stream_offset;
+
+-------------------- EXAMPLE 2 - UPDATE ------------------------
+select * from employees_stream;
+
+SELECT SYSTEM$STREAM_GET_TABLE_TIMESTAMP('employees_stream');
+
+SELECT to_timestamp(SYSTEM$STREAM_GET_TABLE_TIMESTAMP('employees_stream')) as stream_offset;
+
+-- Create a table to store the details of employees
+update ST_EMP set salary = salary + 10000 where salary < 33000;
+
+SELECT to_timestamp(SYSTEM$STREAM_GET_TABLE_TIMESTAMP('employees_stream')) as stream_offset;
+
+select * from employees_stream;
+
+insert into employees_consumer select employee_id, salary 
+                                from employees_stream 
+                                where METADATA$ACTION = 'INSERT' and METADATA$ISUPDATE = 'TRUE';
+
+select * from employees_consumer;
+
+SELECT to_timestamp(SYSTEM$STREAM_GET_TABLE_TIMESTAMP('employees_stream')) as stream_offset;
+
+-------------------- EXAMPLE 3 - DELETE ------------------------
+
+select * from employees_stream;
+
+SELECT SYSTEM$STREAM_GET_TABLE_TIMESTAMP('employees_stream');
+
+SELECT to_timestamp(SYSTEM$STREAM_GET_TABLE_TIMESTAMP('employees_stream')) as stream_offset;
+
+-- Create a table to store the details of employees
+DELETE FROM ST_EMP WHERE SALARY < 40000;
+
+select * from employees_stream;
+
+DELETE FROM employees_consumer WHERE EMPLOYEE_ID IN (select DISTINCT employee_id
+                                from employees_stream 
+                                where METADATA$ACTION = 'DELETE' and METADATA$ISUPDATE = 'FALSE');
+
+select * from employees_consumer;
+
+SELECT to_timestamp(SYSTEM$STREAM_GET_TABLE_TIMESTAMP('employees_stream')) as stream_offset;
+
+-------------------- EXAMPLE 4 - INSERTs WITHIN A TRANSACTION ------------------------
+SELECT SYSTEM$STREAM_GET_TABLE_TIMESTAMP('employees_stream');
+
+SELECT to_timestamp(SYSTEM$STREAM_GET_TABLE_TIMESTAMP('employees_stream')) as stream_offset;
+
+BEGIN;
+show transactions;
+-- insert values in employees table
+insert into ST_EMP values(12,50000,9),
+                            (86,90000,4),
+                          (73,20000,1);
+                                 
+-- The stream records the inserted rows
+select * from employees_stream;
+COMMIT;
+
+select * from employees_stream;
+
+-- Consume the stream
+create or replace table employees_consumer(employee_id number,
+                     salary number);
+                     
+insert into employees_consumer select employee_id, salary from employees_stream;
+
+select * from employees_consumer;
+
+DROP STREAM EMPLOYEES_STREAM;
+
+ALTER STREAM EMPLOYEES_STREAM SET COMMENT = 'This stream is used to capture changes from employees table';
+
+SHOW STREAMS;

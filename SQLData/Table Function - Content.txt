@@ -1,0 +1,21 @@
+CREATE FUNCTION "TALENT"."JOBVITE"."TRACKS_LIST" ( ) 
+RETURNS TABLE (
+artist NVARCHAR(255),
+album NVARCHAR(255),
+track NVARCHAR(255),
+trackno INTEGER,
+m DECIMAL,
+s INTEGER
+)
+AS
+ 'SELECT a.artist AS artist,
+    a.title AS album,
+    t.title AS track,
+    t.track_number AS trackno,
+    t.duration / 60 AS m,
+    MOD(t.duration,60) AS s
+  FROM "TALENT"."JOBVITE"."TRACK" AS t
+  INNER JOIN "TALENT"."JOBVITE"."ALBUM" AS a
+  ON a.id = t.album_id';
+
+SELECT * FROM TABLE("TALENT"."JOBVITE"."TRACKS_LIST" ( ) );

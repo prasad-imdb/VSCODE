@@ -1,0 +1,27 @@
+snowsql -a servicenow-sndsubprod -u PRASADKUMAR.BODDU@SERVICENOW.COM -d DEV_PEOPLE_ANALYTICS -s RDS_INTERNAL -w DEV_DEVELOPER_WH
+
+
+
+create or replace file format my_csv_unload_format
+  type = 'CSV'
+  field_delimiter = '|';
+
+
+create or replace stage "TALENT"."JOBVITE".my_unload_stage
+  file_format = my_csv_unload_format;
+  
+copy into @"TALENT"."JOBVITE".my_unload_stage/unload/ from "TALENT"."JOBVITE"."ALBUM"
+
+list @"TALENT"."JOBVITE".my_unload_stage;
+
+
+----------------------------------------------------
+
+
+CREATE OR REPLACE FILE FORMAT CSV_FILE_FORMAT
+TYPE = CSV FIELD_DELIMITER = '|' SKIP_HEADER = 1;
+
+create or replace stage STG_INTERNAL_CSV
+file_format = "RDS_INTERNAL"."CSV_FILE_FORMAT";
+
+copy into @"DEV_PEOPLE_ANALYTICS"."RDS_INTERNAL".STG_INTERNAL_CSV/unload/ from "DEV_PEOPLE_ANALYTICS"."RDS_INTERNAL"."ALBUM"

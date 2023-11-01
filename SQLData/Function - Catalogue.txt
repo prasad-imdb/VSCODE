@@ -1,0 +1,58 @@
+1)
+
+CREATE FUNCTION  TALENT.JOBVITE.F_TRACKS( )
+RETURNS TABLE (
+artist NVARCHAR(255),
+album NVARCHAR(255),
+track NVARCHAR(255),
+trackno INTEGER,
+m DECIMAL,
+s INTEGER
+)
+AS
+'SELECT a.artist AS artist,
+    a.title AS album,
+    t.title AS track,
+    t.track_number AS trackno,
+    t.duration / 60 AS m,
+    MOD(t.duration,60) AS s
+  FROM TALENT.JOBVITE.TRACK AS t
+  INNER JOIN TALENT.JOBVITE.ALBUM AS a
+  ON a.id = t.album_id'
+;
+
+SELECT * FROM TABLE(TALENT.JOBVITE.F_TRACKS( ));
+
+
+2) user defined Function
+
+SET SCHEMA "PRASADKUMAR_BODDU";
+CREATE FUNCTION scale (val INT)
+RETURNS TABLE (ID INTEGER, SCALE INTEGER) LANGUAGE SQLSCRIPT AS
+BEGIN
+RETURN 
+SELECT ID, :val * ID AS SCALE FROM "PRASADKUMAR_BODDU"."RIGHT1";
+END;
+
+
+SELECT * FROM scale(10);
+
+
+
+
+
+SET SCHEMA "PRASADKUMAR_BODDU";
+CREATE FUNCTION func_add_mul(x Double, y Double)
+RETURNS result_add Double, result_mul Double
+LANGUAGE SQLSCRIPT READS SQL DATA AS
+BEGIN
+result_add := :x + :y;
+result_mul := :x * :y;
+END;
+
+
+CREATE TABLE TAB (a Double, b Double);
+INSERT INTO TAB VALUES (1.0, 2.0);
+INSERT INTO TAB VALUES (3.0, 4.0);
+
+SELECT a, b, func_add_mul(a, b).result_add as ADD, func_add_mul(a, b).result_mul as MUL FROM TAB ORDER BY a;

@@ -1,0 +1,32 @@
+with 
+var_out1 as (  select * from A),
+ 
+var_out2 as( SELECT * FROM B),
+
+var_out as( SELECT * FROM var_out1 LEFT JOIN var_out2 ON var_out1.ID=var_out2.ID  )
+select top 10 * from var_out
+
+
+example:
+
+with 
+Tracks_lt_90 as (SELECT DISTINCT album_id, track_number, duration, title
+ FROM "TALENT"."JOBVITE"."TRACK" WHERE duration <= 90 ),
+
+total_album as(SELECT * FROM "TALENT"."JOBVITE"."ALBUM"),
+
+
+var_out as (SELECT a.title AS album, a.artist, t.track_number AS seq, t.title, t.duration AS secs 
+from total_album a
+INNER JOIN Tracks_lt_90 t
+ON t.album_id = a.id
+ORDER BY a.title, t.track_number)
+ 
+select * from var_out;
+
+
+
+
+
+
+

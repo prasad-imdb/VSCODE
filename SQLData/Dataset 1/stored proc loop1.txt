@@ -1,0 +1,138 @@
+PROCEDURE "SUPPORTTOOLS_RT"."SUPPORTTOOLS.STOREDPROCEDURES::USP_TIMEZONECONVERSION" 
+(IN IN_TIMEZONE  nvarchar(10)) 
+LANGUAGE SQLSCRIPT 
+AS
+BEGIN
+	/**************************************************************************************************
+	* Procedure  Name            :     USP_TIMEZONECONVERSION   
+	* Development Request # :    	   TimeZone Conversion
+	* Date Created               :     08/13/2018
+	* Developed By               :     Prasad Boddu
+	* Brief Description          :     Timezone Conversion Procedure for WFM
+	* ---------------------------------------------------------------------------------------------------
+	* REVISION HISTORY:
+	*----------------------------------------------------------------------------------------------------
+	* CR#                 Date Modified           Modified By        Brief Description of Change 
+	* STRY1426986         23-10-2018			  Prasad Boddu       U_TYPE Field from X_SNC_CALABRIO_EXCEPTION table 
+	* 															     to use in TSE Schedule Dashboard
+    * STRY1473349         04-12-2018			  Prasad Boddu       added new filters DvUState = 'approved' 
+    *                                                                and UActive =1 from WFM Calender  
+	* STRY1544844		  07-02-2019			  Prasad Boddu       From exception table,Refer UAvailable,Name and UType to 
+	*																 to derive In Service TSE Resources
+	*****************************************************************************************************/
+  
+  
+  declare v_starttime timestamp;
+  declare v_endtime  timestamp;
+  declare v_flag CHAR(1);
+ 
+ declare v_loop_endtime  timestamp;
+ declare v_loop_starttime  timestamp;
+
+ 	
+  DECLARE CURSOR c_agent_base_read FOR 
+	SELECT  
+	a."Date"
+	,a."StartTime"
+	,a."EndTime"
+	,b."UType" AS "Type"
+	,b."Name"
+	,b."UAvailable"
+	,a."DvSubType"
+	,a."DvTimeZone"
+	,a."User"
+	,a."DvUser"
+	,a."Holiday"
+	,a."DvUState"
+	,a."TimeZoneUTC" AS "TimeZone"
+	,a."PspPerInsertDt"
+	FROM "_SYS_BIC"."BASE_MODELS.SUPPORT_TOOLS/X_SNC_CALABRIO_CALABRIO_CALENDAR" a
+	LEFT JOIN "_SYS_BIC"."BASE_MODELS.SUPPORT_TOOLS/X_SNC_CALABRIO_EXCEPTION" b
+	ON a."SubType" = b."SysId"
+	WHERE b."UType" <> 'not_available' and a."UActive" = 1 and a."DvUState" = 'Approved'
+	and to_date(a."StartTime") >= add_days(current_date,-60) 
+	and to_date(a."StartTime") <= add_days(current_date,100);
+	
+						
+	DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+       INSERT INTO "STAGING"."EXCEPTIONS"("SCHEMA", "STORED_PROCEDURE", "ERROR_CODE", "ERROR_MSG", "TIME_STAMP", "RESOLVED")
+        VALUES('SUPPORTTOOLS_RT', 'USP_TIMEZONECONVERSION', ::SQL_ERROR_CODE, 'Error message is: ' || ::SQL_ERROR_MESSAGE, CURRENT_TIMESTAMP, 0);
+    END;
+    
+    IF IN_TIMEZONE = :IN_TIMEZONE THEN 
+    	DELETE FROM "SUPPORTTOOLS_ST"."X_SNC_CALABRIO_CALENDAR_BY_TIMEZONE"
+		WHERE "TimeZone" = :IN_TIMEZONE and to_date("StartTime") >= add_days(current_date,-60) 
+		AND to_date("StartTime") <= add_days(current_date,100);
+	END IF;
+   
+	 FOR cur_row as c_agent_base_read  
+	 DO 
+	 	v_starttime :=  cur_row."StartTime";
+		v_endtime :=  cur_row."EndTime";
+			
+		v_loop_endtime := v_endtime;
+		v_loop_starttime := v_starttime;	
+		
+		
+		IF ( IN_TIMEZONE = 'PST') OR (IN_TIMEZONE = 'EST') OR (IN_TIMEZONE = 'CST')
+		  	THEN
+		  		v_loop_starttime := UTCTOLOCAL(v_starttime , IN_TIMEZONE);
+		  		v_loop_endtime := UTCTOLOCAL(v_endtime , IN_TIMEZONE);
+		  		
+		  		INSERT INTO "SUPPORTTOOLS_ST"."X_SNC_CALABRIO_CALENDAR_BY_TIMEZONE" 
+				VALUES (cur_row."Date",:v_loop_starttime,:v_loop_endtime,cur_row."Type",cur_row."Name",cur_row."UAvailable",
+				        cur_row."DvSubType",cur_row."DvTimeZone",cur_row."User",
+						cur_row."DvUser",cur_row."Holiday",cur_row."DvUState",IN_TIMEZONE,cur_row."PspPerInsertDt");				
+							
+		 	ELSEIF (IN_TIMEZONE = 'AEDT')
+		 		THEN
+		 			v_loop_starttime := "CALABRIO_RT"."UTCTOAEDT"(v_starttime);
+			  		v_loop_endtime := "CALABRIO_RT"."UTCTOAEDT"(v_endtime);
+			  		INSERT INTO "SUPPORTTOOLS_ST"."X_SNC_CALABRIO_CALENDAR_BY_TIMEZONE" 
+					VALUES (cur_row."Date",:v_loop_starttime,:v_loop_endtime,cur_row."Type",cur_row."Name",cur_row."UAvailable",
+				        cur_row."DvSubType",cur_row."DvTimeZone",cur_row."User",
+						cur_row."DvUser",cur_row."Holiday",cur_row."DvUState",IN_TIMEZONE,cur_row."PspPerInsertDt");	
+		 	
+		 	ELSEIF (IN_TIMEZONE = 'BST')
+		 		THEN
+		 			v_loop_starttime := "CALABRIO_RT"."UTCTOBST"(v_starttime);
+			  		v_loop_endtime := "CALABRIO_RT"."UTCTOBST"(v_endtime);
+			  		INSERT INTO "SUPPORTTOOLS_ST"."X_SNC_CALABRIO_CALENDAR_BY_TIMEZONE"
+					VALUES (cur_row."Date",:v_loop_starttime,:v_loop_endtime,cur_row."Type",cur_row."Name",cur_row."UAvailable",
+				        cur_row."DvSubType",cur_row."DvTimeZone",cur_row."User",
+						cur_row."DvUser",cur_row."Holiday",cur_row."DvUState",IN_TIMEZONE,cur_row."PspPerInsertDt");
+		 	
+		 	ELSEIF (IN_TIMEZONE = 'CEST')
+		 		THEN
+		 			v_loop_starttime := "CALABRIO_RT"."UTCTOCEST"(v_starttime);
+			  		v_loop_endtime := "CALABRIO_RT"."UTCTOCEST"(v_endtime);
+			  		INSERT INTO "SUPPORTTOOLS_ST"."X_SNC_CALABRIO_CALENDAR_BY_TIMEZONE"
+					VALUES (cur_row."Date",:v_loop_starttime,:v_loop_endtime,cur_row."Type",cur_row."Name",cur_row."UAvailable",
+				        cur_row."DvSubType",cur_row."DvTimeZone",cur_row."User",
+						cur_row."DvUser",cur_row."Holiday",cur_row."DvUState",IN_TIMEZONE,cur_row."PspPerInsertDt");
+				        
+		    ELSEIF (IN_TIMEZONE = 'IST')
+		 		THEN
+		 			v_loop_starttime := ADD_SECONDS(v_starttime,3600*5.5);
+			  		v_loop_endtime := ADD_SECONDS(v_endtime,3600*5.5);
+			  					  						
+			  		INSERT INTO "SUPPORTTOOLS_ST"."X_SNC_CALABRIO_CALENDAR_BY_TIMEZONE"
+					VALUES (cur_row."Date",:v_loop_starttime,:v_loop_endtime,cur_row."Type",cur_row."Name",cur_row."UAvailable",
+				        cur_row."DvSubType",cur_row."DvTimeZone",cur_row."User",
+						cur_row."DvUser",cur_row."Holiday",cur_row."DvUState",IN_TIMEZONE,cur_row."PspPerInsertDt");
+			ELSEIF (IN_TIMEZONE = 'UTC')
+		 		THEN
+					INSERT INTO "SUPPORTTOOLS_ST"."X_SNC_CALABRIO_CALENDAR_BY_TIMEZONE" 
+					VALUES (cur_row."Date",cur_row."StartTime",cur_row."EndTime",cur_row."Type",cur_row."Name",cur_row."UAvailable",
+					cur_row."DvSubType",cur_row."DvTimeZone",cur_row."User",
+					cur_row."DvUser",cur_row."Holiday",cur_row."DvUState",cur_row."TimeZone",cur_row."PspPerInsertDt");
+		 	
+		 END IF;
+		 
+		 	
+
+	END FOR; 
+   
+  
+END;

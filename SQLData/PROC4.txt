@@ -1,0 +1,31 @@
+PROCEDURE "PRODUCT_OPS"."PRODUCT_OPS.STOREDPROCEDURES::USP_TBL_COMPLIANT_CUSTOMERS" ( ) 
+AS  
+BEGIN
+    /*********************************************************************************
+    * Program Name  : USP_TBL_COMPLIANT_CUSTOMERS
+    * Development Request # : T1PRJ0097230
+    * Date Created  : 24 Jan 2019
+    * Developed By  : Prasad Boddu
+    * Brief Description : Loading data in to the materialized Table PRODUCT_OPS.TBL_COMPLIANT_CUSTOMERS
+	* by using Function "PRODUCT_OPS"."COMPLIANT_CUSTOMERS"()
+    * --------------------------------------------------------------------------------------------------------------------------
+    * REVISION HISTORY:
+    *---------------------------------------------------------------------------------------------------------------------------
+    * CR#                 Date Modified           Modified By        Brief Description of Change                                                                                                                                                               
+    * T1PRJ0097230         24-01-2019 			  Prasad Boddu       Loading data in to the materialized Tables                                               
+    *********************************************************************************************/
+    DECLARE CUSTOM_COND CONDITION;
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+       INSERT INTO "STAGING"."EXCEPTIONS"("SCHEMA", "STORED_PROCEDURE", "ERROR_CODE", "ERROR_MSG", "TIME_STAMP", "RESOLVED")
+        VALUES('PRODUCT_OPS', 'USP_TBL_COMPLIANT_CUSTOMERS', ::SQL_ERROR_CODE, 'Error message is: ' || ::SQL_ERROR_MESSAGE, CURRENT_TIMESTAMP, 0);
+    	SIGNAL CUSTOM_COND SET MESSAGE_TEXT = 'Error message is: ' || ::SQL_ERROR_MESSAGE;
+    END;
+--  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> LOAD GLOBAL BASE <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+DELETE FROM PRODUCT_OPS.TBL_COMPLIANT_CUSTOMERS;
+INSERT INTO PRODUCT_OPS.TBL_COMPLIANT_CUSTOMERS 
+  select * from "PRODUCT_OPS"."PRODUCT_OPS.TABLEFUNCTIONS::COMPLIANT_CUSTOMERS"();  
+
+ 
+END;

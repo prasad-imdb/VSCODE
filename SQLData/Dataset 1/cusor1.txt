@@ -1,0 +1,59 @@
+PROCEDURE "SURF_ST"."REAL-TIME-SALES.STOREDPROCEDURES::ASSIGNPRODUCTOWNER" ( ) 
+LANGUAGE SQLSCRIPT
+SQL SECURITY INVOKER 
+
+AS
+BEGIN
+		/*********************************************************************************
+		* Program  Name              :     Hana Studio    
+		* Development Request # 	 : 	   SQL Migration
+		* Date Created               : 	   31/07/2015
+		* Developed By               :     W Brown
+		* Brief Description          : 	   This is the Proceudre fOR loading Product Sales Owner data INTO TBLSALES_SECURITY table.
+		* -------------------------------------------------------------------------------------------------------------------------------
+		* REVISION HISTORY:
+		*--------------------------------------------------------------------------------------------------------------------------------
+		* CR#                 Date ModIFied           ModIFied By        Brief Description of Change 
+		* 1                   28/04/2016              Aravind Ganesh			 Modify source of security data. 
+		* -
+		**********************************************************************************/
+		DECLARE varTSYSID nvarchar(50);
+		DECLARE varPRODUCTSALESOWNERS nvarchar(4000);
+		
+		
+		DECLARE CURSOR TSYSID FOR
+		SELECT SYS_ID AS "TERRITORYSYSID" FROM "SURF_RT"."U_SALES_TERRITORY" ORDER BY SYS_ID;
+	DECLARE CUSTOM_COND CONDITION;	
+		DECLARE EXIT HANDLER FOR SQLEXCEPTION
+	    BEGIN
+	       INSERT INTO "STAGING"."EXCEPTIONS"("SCHEMA", "STORED_PROCEDURE", "ERROR_CODE", "ERROR_MSG", "TIME_STAMP", "RESOLVED")
+	        VALUES('SURF_ST', 'ASSIGNPRODUCTOWNER', ::SQL_ERROR_CODE, 'Error message is: ' || ::SQL_ERROR_MESSAGE, CURRENT_TIMESTAMP, 0);
+	        SIGNAL CUSTOM_COND SET MESSAGE_TEXT = 'Error message is: ' || ::SQL_ERROR_MESSAGE;
+	    END; 
+						
+		CREATE COLUMN TABLE STAGING.GETOTHERS_SECURITY
+	(
+			  TERRITORYSYSID nvarchar(255)
+			, PRODUCTSALESOWNERS nvarchar(4000)
+		);
+		
+		FOR Curvals AS TSYSID DO
+			varTSYSID := CurVals."TERRITORYSYSID";
+				
+			SELECT RETVAL INTO varPRODUCTSALESOWNERS FROM "SURF_ST"."REAL-TIME-SALES.TABLEFUNCTIONS::GETPRODUCTSALESOOWNERS"(:varTSYSID);
+		
+			INSERT INTO STAGING.GETOTHERS_SECURITY 
+			VALUES(:varTSYSID,:varPRODUCTSALESOWNERS);
+		END FOR;
+			
+		DELETE FROM "SURF_ST"."TBLSALESSECURITYSTAGETMP";
+		INSERT INTO "SURF_ST"."TBLSALESSECURITYSTAGETMP"
+	    SELECT vw."TerritorySysID",sc.PRODUCTSALESOWNERS
+		FROM "_SYS_BIC"."SALES.ENTERPRISEMODEL/EM_USERHIERARCHYWITHID" vw
+		INNER JOIN STAGING.GETOTHERS_SECURITY sc ON vw."TerritorySysID" = sc."TERRITORYSYSID";		
+
+	UPDATE 	"SURF_ST"."TBLSALESSECURITY" B SET PRODUCTSALESOWNERS =
+	(SELECT PRODUCTSALESOWNERS FROM "SURF_ST"."TBLSALESSECURITYSTAGETMP" A WHERE A.TERRITORYSYSID =B.TERRITORYSYSID);
+		
+		DROP TABLE STAGING.GETOTHERS_SECURITY;
+END;

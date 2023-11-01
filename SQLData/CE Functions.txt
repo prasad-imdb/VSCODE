@@ -1,0 +1,25 @@
+do
+BEGIN
+/***************************** 
+	Write your function logic
+ *****************************/
+ Tracks = CE_COLUMN_TABLE("PRASADKUMAR_BODDU"."TRACK", ["ID","ALBUM_ID","TITLE","TRACK_NUMBER","DURATION"]);
+ 
+ Tracks_lt_180 = CE_PROJECTION(:Tracks,["ALBUM_ID","TITLE","TRACK_NUMBER","DURATION"], '"DURATION" <= 180 ');
+ 
+ Duration = CE_AGGREGATION(:Tracks_lt_180, [SUM("DURATION") AS TOTAL_DURATION], ["ALBUM_ID"]);
+ 
+ total_album = CE_COLUMN_TABLE("PRASADKUMAR_BODDU"."ALBUM", ["ID","TITLE","ARTIST","LABEL","RELEASED"]);
+ 
+ --AT_VIEW = CE_JOIN_VIEW("PRODUCT_SALES", ["PRODUCT_KEY", "PRODUCT_TEXT", "SALES"]); -- Attribute view 
+ --AV_VIEW = CE_OLAP_VIEW("OLAP_view", ["DIM1", "KF"]); --Analytical View 
+ --CE_VIEW = CE_CALC_VIEW("_SYS_SS_CE_TESTCECTABLE_RET", ["CID", "CNAME"]);
+ 
+ INNER_JOIN = CE_JOIN (:total_album,:Tracks,["ID"],["ID","ARTIST","LABEL","RELEASED","TRACK_NUMBER" ]);
+ LEFT_JOIN = CE_LEFT_OUTER_JOIN (:total_album,:Tracks,["ID"],["ID","ARTIST","LABEL","RELEASED","TRACK_NUMBER" ]);
+ UNION_ALL = CE_UNION_ALL(:total_album,:total_album);
+ 
+--select * from :var_out;
+select * from :UNION_ALL;
+
+END;

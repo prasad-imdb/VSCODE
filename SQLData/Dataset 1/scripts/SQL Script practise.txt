@@ -1,0 +1,1449 @@
+-- 03 The SELECT statement
+
+SELECT 'Hello, World';
+SELECT 'Hello, World' AS Result;
+SELECT * FROM "NAVEEN"."SALES"."COUNTRY";
+SELECT * FROM "NAVEEN"."SALES"."COUNTRY" ORDER BY Name DESC;
+SELECT Name, LifeExpectancy FROM "NAVEEN"."SALES"."COUNTRY" ORDER BY Name;
+
+SELECT Name, LifeExpectancy AS "Life Expectancy" FROM "NAVEEN"."SALES"."COUNTRY" ORDER BY Name;
+
+-- 04 Selecting Rows
+
+SELECT Name, Continent, Region FROM "NAVEEN"."SALES"."COUNTRY";
+SELECT Name, Continent, Region FROM "NAVEEN"."SALES"."COUNTRY" WHERE Continent = 'Europe' ;
+SELECT Name, Continent, Region FROM "NAVEEN"."SALES"."COUNTRY" WHERE Continent = 'Europe' ORDER BY Name;
+SELECT * FROM "NAVEEN"."SALES"."COUNTRY" WHERE Continent = 'Europe' ORDER BY Name LIMIT 5 ;
+SELECT Name, Continent, Region FROM "NAVEEN"."SALES"."COUNTRY" WHERE Continent = 'Europe' ORDER BY Name LIMIT 5 OFFSET 5;
+ --(OFFSET IS USED ONLY WITH ORDER BY ) 
+
+-- 05 Selecting Columns
+
+SELECT * from "NAVEEN"."SALES"."COUNTRY";
+SELECT Name, Continent, Region from "NAVEEN"."SALES"."COUNTRY";
+SELECT Name AS Country, Continent, Region from Country;
+SELECT Name AS Country, Region, Continent from Country;
+
+-- 06 Counting Rows
+-- world.db
+
+SELECT COUNT(*) FROM Country;
+SELECT COUNT(*) FROM "NAVEEN"."SALES"."COUNTRY" WHERE Population > 1000000;
+SELECT COUNT(*) FROM "NAVEEN"."SALES"."COUNTRY" WHERE Population > 100000000;
+SELECT * FROM Country WHERE Population > 100 OR Continent = 'Europe' ;
+
+SELECT COUNT(*) FROM Country;
+SELECT COUNT(LifeExpectancy) FROM Country;
+
+-- 07 Inserting Data
+
+CREATE TABLE "NAVEEN"."SALES".CUSTOMERS(
+    id              INTEGER PRIMARY KEY, 
+    name            NVARCHAR(255),
+    address         NVARCHAR(255),
+    city            NVARCHAR(255),
+    state           NVARCHAR(255),
+    zip             NVARCHAR(255)
+);
+
+INSERT INTO customers (id,name, city, state) 
+  VALUES (7,'Jimi Hendrix', 'Renton', 'WA');
+  
+  
+SELECT * FROM customers;
+
+INSERT INTO customers (id,name, address, city, state, zip) 
+  VALUES (4,'Fred Flintstone', '123 Cobblestone Way', 'Bedrock', 'CA', '91234');
+ 
+INSERT INTO customers  
+  VALUES (null,'Fred Flintstone', null, 'Bedrock', 'CA', '91234');
+    
+INSERT INTO customers  
+  VALUES (5,'Fred Flintstone', null, 'Bedrock', 'CA', '91234');
+
+
+
+-- 08 Updating Data
+SELECT * FROM customers;
+UPDATE customers SET address = '123 Music Avenue', zip = '98056' WHERE id = 5;
+UPDATE customers SET address = '2603 S Washington St', zip = '98056' WHERE id = 7;
+UPDATE customers SET address = NULL, zip = NULL WHERE id = 5;
+
+-- 09 Deleting Data
+SELECT * FROM customer WHERE id = 4;
+DELETE FROM customer WHERE id = 4;
+SELECT * FROM customer;
+DELETE FROM customer WHERE id = 5;
+SELECT * FROM customer;
+
+----------------------------------------------------------------
+-- 01 CREATE TABLE
+CREATE or replace TABLE test (
+  a INTEGER,
+  b VARCHAR(10)
+);
+
+INSERT INTO test VALUES ( 1, 'a' );
+INSERT INTO test VALUES ( 2, 'b' );
+INSERT INTO test VALUES ( 3, 'c' );
+SELECT * FROM test;
+
+-- 02 DROP TABLE
+CREATE or replace TABLE test ( a NVARCHAR(55), b NVARCHAR(55) );
+INSERT INTO test VALUES ( 'one', 'two' );
+SELECT * FROM test;
+DROP TABLE test1;
+DROP TABLE IF EXISTS test;
+
+-- 03 INSERT INTO
+CREATE or replace TABLE test ( a INTEGER, b NVARCHAR(55), c NVARCHAR(55) );
+
+INSERT INTO test VALUES ( 1, 'This', 'Right here!' ); 
+INSERT INTO test ( b, c ) VALUES ( 'That', 'Over there!' ); 
+INSERT INTO test DEFAULT VALUES;
+
+CREATE TABLE ITEM (
+    id              INTEGER PRIMARY KEY,
+    name            NVARCHAR(255),
+    description     NVARCHAR(255)
+);
+
+
+INSERT INTO ITEM ( id, name, description ) VALUES ( 1, 'Box of 64 Pixels', '64 RGB pixels in a decorative box' );
+INSERT INTO ITEM ( id, name, description ) VALUES ( 2, 'Sense of Humor', 'Especially dry. Imported from England.' );
+INSERT INTO ITEM ( id, name, description ) VALUES ( 3, 'Beauty', 'Inner beauty. No cosmetic surgery required!' );
+INSERT INTO ITEM ( id, name, description ) VALUES ( 4, 'Bar Code', 'Unused. In original packaging.' );
+--data type should be same
+INSERT INTO test
+SELECT id, name, description from item;
+
+SELECT * FROM test
+minus
+SELECT id, name, description from item;
+;
+
+-- 04 DELETE FROM
+SELECT * FROM test;
+DELETE FROM test WHERE a = 3;
+SELECT * FROM test WHERE a = 1;
+DELETE FROM test WHERE a = 1;
+
+-- 05 NULL
+SELECT * FROM test;
+SELECT * FROM test WHERE a = NULL;-- DOESNT WORK
+SELECT * FROM test WHERE a IS NULL;
+SELECT * FROM test WHERE a IS NOT NULL;
+INSERT INTO test ( a, b, c ) VALUES ( 0, NULL, '' );
+SELECT * FROM test WHERE b IS NULL;
+SELECT * FROM test WHERE b = '';
+SELECT * FROM test WHERE c = '';
+SELECT * FROM test WHERE c IS NULL;
+
+UPDATE TEST
+SET B = ''
+WHERE B = 'This';
+
+
+
+DROP TABLE test;
+CREATE TABLE test (
+  a INTEGER NOT NULL,
+  b NVARCHAR(55) NOT NULL,
+  c NVARCHAR(55)
+);
+
+INSERT INTO test VALUES ( 1, 'this', 'that' );
+SELECT * FROM test;
+
+INSERT INTO test ( b, c ) VALUES ( 'one', 'two' );
+INSERT INTO test ( a, c ) VALUES ( 1, 'two' );
+INSERT INTO test ( a, b ) VALUES ( 1, 'two' );
+DROP TABLE test;
+
+-- 06 Constraints
+
+DROP TABLE test;
+CREATE TABLE test ( a NVARCHAR(55), b NVARCHAR(55), c NVARCHAR(55) );
+INSERT INTO test ( a, b  ) VALUES ( 'two', 'three');
+SELECT * FROM test;
+
+CREATE OR REPLACE TABLE test ( a NVARCHAR(55), b NVARCHAR(55), c NVARCHAR(55) NOT NULL );
+CREATE or replace TABLE test ( a NVARCHAR(55), b NVARCHAR(55), c NVARCHAR(55) DEFAULT 'panda' );
+CREATE TABLE test ( a NVARCHAR(55) UNIQUE, b NVARCHAR(55), c NVARCHAR(55) DEFAULT 'panda' );
+CREATE TABLE test ( a NVARCHAR(55) UNIQUE NOT NULL, b NVARCHAR(55), c NVARCHAR(55) DEFAULT 'panda' );
+
+
+---------------------------------------------------end -------------------------------
+-- 07 ALTER TABLE
+DROP TABLE test;
+CREATE COLUMN TABLE test ( a NVARCHAR(55), b NVARCHAR(55), c NVARCHAR(55) );
+INSERT INTO test VALUES ( 'one', 'two', 'three');
+INSERT INTO test VALUES ( 'two', 'three', 'four');
+INSERT INTO test VALUES ( 'three', 'four', 'five');
+SELECT * FROM test;
+
+ALTER TABLE test ADD (d NVARCHAR(55));
+ALTER TABLE test ADD (e NVARCHAR(55) DEFAULT 'panda');
+
+ALTER table test ROW;
+
+ALTER TABLE test ALTER (a INTEGER DEFAULT 10);
+
+DROP TABLE test;
+
+-- 08 ID
+-- test.db
+
+CREATE TABLE test (
+  id INTEGER PRIMARY KEY,
+  a INTEGER,
+  b NVARCHAR(55)
+);
+
+INSERT INTO test (a, b) VALUES ( 10, 'a' );
+INSERT INTO test (a, b) VALUES ( 11, 'b' );
+INSERT INTO test (a, b) VALUES ( 12, 'c' );
+
+
+INSERT INTO test (id,a, b) VALUES ( 1,10, 'a' );
+INSERT INTO test (id,a, b) VALUES ( 2,11, 'b' );
+INSERT INTO test (id,a, b) VALUES ( 3,12, 'c' );
+
+
+SELECT * FROM test;
+DROP TABLE test;
+
+-- 09 WHERE, LIKE, and IN
+SELECT * FROM Country;
+
+SELECT Name, Continent, Population FROM Country 
+  WHERE Population < 100000 ORDER BY Population DESC;
+SELECT Name, Continent, Population FROM Country 
+  WHERE Population < 100000 OR Population IS NULL ORDER BY Population DESC;
+SELECT Name, Continent, Population FROM Country 
+  WHERE Population < 100000 AND Continent = 'Oceania' ORDER BY Population DESC;
+  
+SELECT Name, Continent, Population FROM Country 
+  WHERE Name LIKE '%island%' ORDER BY Name;
+  
+SELECT Name, Continent, Population FROM Country 
+ WHERE Continent IN ( 'Europe', 'Asia' ) ORDER BY Name;
+
+-- 10 SELECT DISTINCT
+-- world.db
+
+SELECT Continent FROM Country;
+SELECT DISTINCT Continent FROM Country;
+--Using the SELECT DISTINCT statement, you will get only unique results. 
+
+DROP TABLE test;
+CREATE TABLE test ( a int, b int );
+INSERT INTO test VALUES ( 1, 1 );
+INSERT INTO test VALUES ( 2, 1 );
+INSERT INTO test VALUES ( 3, 1 );
+INSERT INTO test VALUES ( 4, 1 );
+INSERT INTO test VALUES ( 5, 1 );
+INSERT INTO test VALUES ( 1, 2 );
+INSERT INTO test VALUES ( 1, 2 );
+INSERT INTO test VALUES ( 1, 2 );
+INSERT INTO test VALUES ( 1, 2 );
+INSERT INTO test VALUES ( 1, 2 );
+SELECT * FROM test;
+
+SELECT DISTINCT a FROM test;
+SELECT DISTINCT b FROM test;
+SELECT DISTINCT a, b FROM test;
+
+DROP TABLE test;
+
+-- 11 ORDER BY
+SELECT Name FROM Country;
+SELECT Name FROM Country ORDER BY Name;
+SELECT Name FROM Country ORDER BY Name DESC;
+SELECT Name FROM Country ORDER BY Name ASC;
+SELECT Name, Continent FROM Country ORDER BY Continent, Name;
+SELECT Name, Continent, Region FROM Country ORDER BY Continent DESC, Region, Name;
+
+-- 12 CASE
+DROP TABLE booltest;
+CREATE TABLE booltest (a INTEGER, b INTEGER);
+INSERT INTO booltest VALUES (1, 0);
+SELECT * FROM booltest;
+
+SELECT
+    CASE WHEN a THEN 'true' ELSE 'false' END as boolA,
+    CASE WHEN b THEN 'true' ELSE 'false' END as boolB
+    FROM booltest
+;
+
+SELECT
+  CASE a WHEN 1 THEN 'true' ELSE 'false' END AS boolA,
+  CASE b WHEN 1 THEN 'true' ELSE 'false' END AS boolB 
+  FROM booltest
+;
+
+SELECT
+  CASE WHEN a=1 THEN 'true' ELSE 'false' END AS boolA,
+  CASE WHEN b=1 THEN 'true' ELSE 'false' END AS boolB 
+  FROM booltest
+;
+
+DROP TABLE booltest;
+
+-- 02 JOIN
+
+-- join example tables, left and right
+CREATE COLUMN TABLE left  ( id INTEGER, description NVARCHAR(255) );
+CREATE COLUMN TABLE right ( id INTEGER, description NVARCHAR(255) );
+
+CREATE COLUMN TABLE left1  ( id INTEGER, description NVARCHAR(255) );
+CREATE COLUMN TABLE right1 ( id INTEGER, description NVARCHAR(255) );
+
+
+INSERT INTO left1 VALUES ( 1, 'left 01' );
+INSERT INTO left1 VALUES ( 2, 'left 02' );
+INSERT INTO left1 VALUES ( 3, 'left 03' );
+INSERT INTO left1 VALUES ( 4, 'left 04' );
+INSERT INTO left1 VALUES ( 5, 'left 05' );
+INSERT INTO left1 VALUES ( 6, 'left 06' );
+INSERT INTO left1 VALUES ( 7, 'left 07' );
+INSERT INTO left1 VALUES ( 8, 'left 08' );
+INSERT INTO left1 VALUES ( 9, 'left 09' );
+
+INSERT INTO right1 VALUES ( 6, 'right 06' );
+INSERT INTO right1 VALUES ( 7, 'right 07' );
+INSERT INTO right1 VALUES ( 8, 'right 08' );
+INSERT INTO right1 VALUES ( 9, 'right 09' );
+INSERT INTO right1 VALUES ( 10, 'right 10' );
+INSERT INTO right1 VALUES ( 11, 'right 11' );
+INSERT INTO right1 VALUES ( 11, 'right 12' );
+INSERT INTO right1 VALUES ( 11, 'right 13' );
+INSERT INTO right1 VALUES ( 11, 'right 14' );
+
+SELECT * FROM left1;
+SELECT * FROM right1;
+
+--INNER
+SELECT l.description AS left1, r.description AS right1
+  FROM left1 AS l
+  JOIN right1 AS r ON l.id = r.id
+  ;
+
+
+  SELECT l.description AS left1, r.description AS right1
+  FROM left1 AS l
+  INNER JOIN right1 AS r ON l.id = r.id
+  ;
+  
+--LEFT  
+SELECT * FROM left1;
+SELECT * FROM right1;
+
+  SELECT l.*, r.*
+  FROM left1 AS l
+  LEFT JOIN right1 AS r ON l.id = r.id
+  ORDER BY l.id --(id is available in Both) 
+  ;
+
+
+--RIGHT 
+SELECT * FROM left1;
+SELECT * FROM right1;
+
+  SELECT l.*, r.*
+  FROM left1 AS l
+  RIGHT JOIN right1 AS r ON l.id = r.id
+  ORDER BY l.id --(id is available in Both) 
+  ; 
+ 
+--FULL
+SELECT * FROM left1;
+SELECT * FROM right1;
+
+  SELECT l.*, r.*,COALESCE(l.id,r.id) NewId
+  FROM left1 AS l
+  FULL JOIN right1 AS r ON l.id = r.id
+  ORDER BY l.id --(id is available in Both) 
+  ;  
+ 
+ 
+ set SCHEMA "PRASADKUMAR_BODDU";
+--CROSS JOIN:
+
+create column table "NAME_LIST"
+(
+"Id" integer,
+"F_Name" nvarchar(65),
+"L_Name" nvarchar(65),
+"Movie_Id" integer
+);
+
+INSERT INTO "NAME_LIST" VALUES (1,'Adam','Smith',1);
+INSERT INTO "NAME_LIST" VALUES (2,'Ravi','Kumar',2);
+INSERT INTO "NAME_LIST" VALUES (3,'Susan','Davidson',5);
+INSERT INTO "NAME_LIST" VALUES (4,'Lee','Pong',10);
+INSERT INTO "NAME_LIST" VALUES (5,'Jenny','Adrianna',8);
+
+SELECT * FROM "NAME_LIST";
+
+create column table "MOVIE_LIST"
+(
+"Id" integer,
+"Title" nvarchar(65),
+"Category" nvarchar(65)
+);
+  
+INSERT INTO  "MOVIE_LIST" VALUES (1,'ASSASSIN CREED: EMBERS','Animations');
+INSERT INTO  "MOVIE_LIST" VALUES (2,'Real_Steel(2012)','Animations');
+INSERT INTO  "MOVIE_LIST" VALUES (3,'Alvin_and_the_Chipmunks','Animations');
+INSERT INTO  "MOVIE_LIST" VALUES (4,'The Adventures of Tin Tin','Animations');
+INSERT INTO  "MOVIE_LIST" VALUES (5,'Safe (2012)','Action');
+INSERT INTO  "MOVIE_LIST" VALUES (6,'Safe House(2012)','Action');
+INSERT INTO  "MOVIE_LIST" VALUES (7,'GIA','18+');
+INSERT INTO  "MOVIE_LIST" VALUES (8,'Deadline 2009','18+');
+INSERT INTO  "MOVIE_LIST" VALUES (9,'The Dirty Picture','18+');
+INSERT INTO  "MOVIE_LIST" VALUES (10,'Marley and me','Romance');
+
+SELECT * FROM "NAME_LIST";
+select * from "MOVIE_LIST";
+
+select * from "NAME_LIST","MOVIE_LIST"
+ORDER BY 1,5;
+
+SELECT * FROM "NAME_LIST" CROSS JOIN "MOVIE_LIST"
+ORDER BY 1,5;
+
+--If we use WHERE Clause It becomes = Inner join 
+
+SELECT * FROM "NAME_LIST" CROSS JOIN "MOVIE_LIST"
+--WHERE "NAME_LIST"."Movie_Id" = "MOVIE_LIST"."Id" 
+ORDER BY 1,5;
+
+
+
+DROP TABLE left1;
+DROP TABLE right1;
+
+-- sale example
+SELECT * FROM sale;
+SELECT * FROM item;
+
+SELECT s.id AS sale, i.name, s.price 
+  FROM sale AS s
+  INNER JOIN item AS i ON s.item_id = i.id
+  ;
+
+SELECT s.id AS sale, s.date, i.name, i.description, s.price 
+  FROM sale AS s
+  INNER JOIN item AS i ON s.item_id = i.id
+  ;
+
+-- 03 Junction Table
+
+SELECT * FROM customer;
+SELECT * FROM item;
+SELECT * FROM sale;
+
+SELECT c.name AS Cust, c.zip, i.name AS Item, i.description, s.quantity AS Quan, s.price AS Price
+  FROM sale AS s
+  JOIN item AS i ON s.item_id = i.id
+  JOIN customer AS c ON s.customer_id = c.id
+  ORDER BY Cust, Item
+;
+
+-- a customer without sales
+INSERT INTO customer VALUES (6,'Jane Smith',NULL,NULL,'CA','91234' );
+SELECT * FROM customer;
+
+-- left joins
+SELECT c.name AS Cust, c.zip, i.name AS Item, i.description, s.quantity AS Quan, s.price AS Price
+  FROM customer AS c
+  LEFT JOIN sale AS s ON s.customer_id = c.id
+  LEFT JOIN item AS i ON s.item_id = i.id
+  ORDER BY Cust, Item
+;
+
+
+-- ONE MORE EXAMPLE
+--To create a Table: “PRODUCTS”
+
+SET SCHEMA "PRASADKUMAR_BODDU";
+
+CREATE  TABLE "PRASAD1"."SCHEMA"."PRODUCTS"
+(
+    "ID" INTEGER PRIMARY KEY ,
+    "PRODUCT_NAME" VARCHAR(100),
+    "PRICE" DECIMAL(13 , 2 )
+);
+
+--To insert a records into the “PRODUCTS” Table:
+SELECT * FROM "PRASAD1"."SCHEMA"."PRODUCTS"
+INSERT INTO "PRASAD1"."SCHEMA"."PRODUCTS" ("ID","PRODUCT_NAME", "PRICE") VALUES (1,'iPhone', 699.00);
+INSERT INTO "PRASAD1"."SCHEMA"."PRODUCTS"("ID","PRODUCT_NAME", "PRICE") VALUES (2,'iPad',599.00);
+INSERT INTO "PRASAD1"."SCHEMA"."PRODUCTS" ("ID","PRODUCT_NAME", "PRICE") VALUES (3,'Macbook Pro',1299.00);
+
+ 
+--To create a Table: “STORES”
+
+CREATE TABLE "PRASAD1"."SCHEMA"."STORES"
+ (
+    "ID" INT PRIMARY KEY ,
+    "STORE_NAME" VARCHAR(100)
+);
+
+--To insert a records into the “STORES” Table:
+
+INSERT INTO "PRASAD1"."SCHEMA"."STORES"("ID","STORE_NAME")VALUES(1,'North');
+INSERT INTO "PRASAD1"."SCHEMA"."STORES"("ID","STORE_NAME")VALUES(2,'South');
+--To create a Table: “SALES”
+
+CREATE TABLE "PRASAD1"."SCHEMA"."SALES" (
+    "PRODUCT_ID" INT,
+    "STORE_ID" INT,
+    "QUANTITY" DECIMAL(13 , 2 ) NOT NULL,
+    "SALES_DATE" DATE NOT NULL,
+    PRIMARY KEY ("PRODUCT_ID", "STORE_ID"),
+    FOREIGN KEY ("PRODUCT_ID")
+        REFERENCES "PRODUCTS" ("ID")
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY ("STORE_ID")
+        REFERENCES "STORES" ("ID")
+        ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+
+--To insert a records into the “SALES” Table:
+
+INSERT INTO "SALES"("STORE_ID","PRODUCT_ID","QUANTITY","SALES_DATE")VALUES(1,1,20,'2017-01-02');
+INSERT INTO "SALES"("STORE_ID","PRODUCT_ID","QUANTITY","SALES_DATE")VALUES(1,2,15,'2017-01-05');
+INSERT INTO "SALES"("STORE_ID","PRODUCT_ID","QUANTITY","SALES_DATE")VALUES(1,3,25,'2017-01-05');
+INSERT INTO "SALES"("STORE_ID","PRODUCT_ID","QUANTITY","SALES_DATE")VALUES(2,1,30,'2017-01-02');
+INSERT INTO "SALES"("STORE_ID","PRODUCT_ID","QUANTITY","SALES_DATE")VALUES(2,2,35,'2017-01-05');
+
+--To get the total sales for each store and for each product, you calculate the sales and group them by store and product as follows:
+
+SELECT
+    "STORE_NAME",
+    "PRODUCT_NAME",
+    SUM("QUANTITY" * "PRICE") AS revenue
+FROM
+    "SALES"
+        INNER JOIN
+    "PRODUCTS" ON "PRODUCTS"."ID" = "SALES"."PRODUCT_ID"
+        INNER JOIN
+    "STORES" ON "STORES"."ID" = "SALES"."STORE_ID"
+GROUP BY "STORE_NAME" , "PRODUCT_NAME";
+
+Use Cross join To Know which is not doing good
+
+SELECT
+    "STORE_NAME", "PRODUCT_NAME"
+FROM "STORES" AS a
+CROSS JOIN
+"PRODUCTS" AS b;
+
+
+SELECT
+    b."STORE_NAME",
+    a."PRODUCT_NAME",
+    IFNULL(c.revenue, 0) AS revenue
+FROM "PRODUCTS" AS a
+CROSS JOIN
+"STORES" AS b
+LEFT JOIN
+    (SELECT
+        "STORES"."ID" AS "STORE_ID",
+        "PRODUCTS"."ID" AS "PRODUCT_ID",
+        "STORE_NAME",
+        "PRODUCT_NAME",
+         ROUND(SUM("QUANTITY" * "PRICE"), 0) AS revenue
+    FROM
+        "SALES"
+    INNER JOIN "PRODUCTS" ON "PRODUCTS"."ID" = "SALES"."PRODUCT_ID"
+    INNER JOIN "STORES" ON "STORES"."ID" = "SALES"."STORE_ID"
+    GROUP BY "STORE_NAME" , "PRODUCT_NAME","STORES"."ID","PRODUCTS"."ID") AS c 
+    ON c."STORE_ID" = b."ID"
+   AND c."PRODUCT_ID"= a."ID"
+ORDER BY b."STORE_NAME";
+
+
+SET SCHEMA "PRASADKUMAR_BODDU";
+--SCORE()
+DROP TABLE customer1;
+CREATE TABLE customer1(
+    id              INTEGER PRIMARY KEY, 
+    name            NVARCHAR(255),
+    address         TEXT FAST PREPROCESS OFF,
+    city            NVARCHAR(255),
+    state           NVARCHAR(255),
+    zip             NVARCHAR(255)
+);
+
+INSERT INTO customer1 ( id, name, address, city, state, zip ) VALUES ( 1, 'Bill Smith', '123 Main Street', 'Hope', 'CA', '98765' );
+INSERT INTO customer1 ( id, name, address, city, state, zip ) VALUES ( 2, 'Mary Smith', '123 Dorian Street', 'Harmony', 'AZ', '98765' );
+INSERT INTO customer1 ( id, name, address, city, state, zip ) VALUES ( 3, 'Bob Smith', '123 Laugh Street', 'Humor', 'CA', '98765' );
+
+SELECT SCORE(),address  FROM customer1 WHERE CONTAINS(address , 'Street',Fuzzy(0.5)); 
+
+--SECONDS_BETWEEN
+
+SELECT SECONDS_BETWEEN ('2009-12-05', '2010-01-05') "seconds between" FROM DUMMY;
+SELECT "ProductKey","ProductKey","UnitPrice","OrderDate","DueDate","ShipDate",
+seconds_between("OrderDate","ShipDate")/(60*60) deliverytimeinHours
+from "Factinternetsales";
+
+--week and weekday
+SELECT  WEEK (TO_DATE('2011-05-30', 'YYYY-MM-DD')) "week" FROM DUMMY;
+SELECT WEEKDAY (TO_DATE ('2010-12-31', 'YYYY-MM-DD')) "week day" FROM DUMMY;
+
+--UTCTOLOCAL
+SELECT "ProductKey","ProductKey","UnitPrice","OrderDate",utctolocal("OrderDate",'PST') "OrderdatePST","DueDate","ShipDate"
+from "Factinternetsales";
+
+SELECT "ProductKey","ProductKey","UnitPrice",TO_TIMESTAMP("OrderDate",'YYYY-MM-DD HH24:MI:SS'),utctolocal(TO_TIMESTAMP("OrderDate",'YYYY-MM-DD HH24:MI:SS'),'PST') "OrderdatePST","DueDate","ShipDate"
+from "Factinternetsales";
+
+--Conversion function
+
+SELECT CAST (7 AS VARCHAR) "cast" FROM DUMMY;
+SELECT CAST (10.5 AS INTEGER) "cast" FROM DUMMY;
+SELECT CAST (10.5 AS decimal) "cast" FROM DUMMY;
+SELECT CAST (10.5 AS nvarchar) "cast" FROM DUMMY;
+
+SELECT TO_ALPHANUM ('10') "to alphanum" FROM DUMMY
+SELECT TO_BIGINT (10.5) "to bigint" FROM DUMMY;
+SELECT TO_CLOB ('TO_CLOB converts the value to a CLOB data type') "to clob" FROM DUMMY; -- always convert CLOB Columns to NVARCHAR(4999)
+SELECT TO_DATE('2010-01-12', 'YYYY-MM-DD') "to date" FROM DUMMY;
+SELECT TO_DECIMAL(7654321.888888, 10, 3) "to decimal" FROM DUMMY;
+SELECT TO_INTEGER(10.5) "to int" FROM DUMMY;
+SELECT TO_NVARCHAR(TO_DATE('2009/12/31'), 'YY-MM-DD') "to nvarchar" FROM DUMMY;
+
+SELECT TO_NVARCHAR(1, '00.00') FROM Dummy;    --> 01.00
+SELECT TO_NVARCHAR(100, '00.00') FROM Dummy;          --> 100.00
+SELECT TO_NVARCHAR(100, '9999.00') FROM Dummy;        --> 100.00
+SELECT TO_NVARCHAR(100, '0000.00') FROM Dummy;        --> 0100.00
+SELECT TO_NVARCHAR(1000, '9,999.00') FROM Dummy;      --> 1,000.00
+SELECT TO_NVARCHAR(1000, '$9,999.00') FROM Dummy;     --> $1,000.00
+SELECT TO_NVARCHAR(1000, '$9,999.99') FROM Dummy;     --> $1,000.
+
+
+SELECT TO_SECONDDATE ('2010-01-11 13:30:00', 'YYYY-MM-DD HH24:MI:SS') "to seconddate" FROM DUMMY;
+SELECT TO_TIMESTAMP ('2010-01-11 13:30:00', 'YYYY-MM-DD HH24:MI:SS') "to timestamp" FROM DUMMY;
+
+--STRING_AGG
+
+CREATE ROW TABLE r1(a INT, str VARCHAR(20), grp INT);
+
+INSERT INTO r1 VALUES (3,'str2',0);
+INSERT INTO r1 VALUES (0,'str1',0);
+INSERT INTO r1 VALUES (NULL,'NULL',0);
+INSERT INTO r1 VALUES (5,'str3',0);
+INSERT INTO r1 VALUES (3,'val3',1);
+INSERT INTO r1 VALUES (6,'val6',1);
+INSERT INTO r1 VALUES (NULL,'NULL',1);
+INSERT INTO r1 VALUES (1,'val1',1);
+
+SELECT * FROM r1;
+SELECT grp, STRING_AGG(str,','ORDER BY a)AS agg FROM R1 GROUP BY grp;
+SELECT grp, STRING_AGG(str,','ORDER BY a DESC) AS agg FROM r1 GROUP BY grp;
+
+SELECT "ProductKey","UnitPrice","DueDate","ShipDate"
+from "Factinternetsales";
+
+SELECT "ProductKey",STRING_AGG(TO_NVARCHAR("UnitPrice"),',' ORDER BY "OrderDate"),"DueDate","ShipDate"
+from "Factinternetsales"
+GROUP BY "ProductKey","DueDate","ShipDate";
+
+WINDOWS FUNCTIONS:
+
+CREATE ROW TABLE T (class CHAR(10), val INT, offset INT);
+ INSERT INTO T VALUES('A', 1, 1);
+ INSERT INTO T VALUES('A', 3, 3);
+ INSERT INTO T VALUES('A', 5, null);
+ INSERT INTO T VALUES('A', 5, 2);
+ INSERT INTO T VALUES('A', 10, 0);
+ INSERT INTO T VALUES('B', 1, 3);
+ INSERT INTO T VALUES('B', 1, 1);
+ INSERT INTO T VALUES('B', 7, 1);
+
+select * from T order by class;
+select * from T order by class,offset;
+
+SELECT DISTINCT class from T;
+
+SELECT MAX(val) from T;
+SELECT class,MAX(val) from T Group by class;
+
+SELECT Min(offset) from T;
+SELECT class,Min(offset) from T Group by class;
+
+SELECT class, 
+  val, 
+  offset,
+  MAX(val) OVER (PARTITION BY class) AS m1,
+  MAX(val) OVER (PARTITION BY class ORDER BY val) AS m2
+ FROM T;
+
+SELECT class, 
+  val, 
+  offset,
+  COUNT(*) OVER (PARTITION BY class) AS c1,
+  COUNT(offset) OVER (PARTITION BY class) AS c2,
+  COUNT(*) OVER (PARTITION BY class ORDER BY val) AS c3,
+  COUNT(offset) OVER (PARTITION BY class ORDER BY val) AS c4,
+  MAX(val) OVER (PARTITION BY class) AS m1,
+  MAX(val) OVER (PARTITION BY class ORDER BY val) AS m2
+ FROM T;
+
+SELECT class,COUNT(offset)
+FROM T
+group by class
+
+SELECT class,min(offset)
+FROM T
+group by class
+
+SELECT class,max(offset)
+FROM T
+group by class
+ 
+BINNING:
+
+DROP TABLE weather;
+CREATE ROW TABLE weather (station INT, ts DATE, temperature FLOAT);
+INSERT INTO weather VALUES(1, '2014-01-01', 0);
+INSERT INTO weather VALUES(1, '2014-01-02', 3);
+INSERT INTO weather VALUES(1, '2014-01-03', 4.5);
+INSERT INTO weather VALUES(1, '2014-01-04', 6);
+INSERT INTO weather VALUES(1, '2014-01-05', 6.3);
+INSERT INTO weather VALUES(1, '2014-01-06', 5.9);
+INSERT INTO weather VALUES(1, '2015-01-01', 1);
+INSERT INTO weather VALUES(1, '2015-01-02', 3.4);
+INSERT INTO weather VALUES(1, '2015-01-03', 5);
+INSERT INTO weather VALUES(1, '2015-01-04', 6.7);
+INSERT INTO weather VALUES(1, '2015-01-05', 4.6);
+INSERT INTO weather VALUES(1, '2015-01-06', 6.9);
+
+
+select * from weather;
+create column table weather_bin as
+(
+SELECT *,
+concat(concat(month(ts),'-'),year(ts)) as monyr,BINNING(VALUE => temperature, BIN_COUNT => 4) OVER () AS bin_num FROM weather
+);
+
+
+
+RANK:
+CREATE ROW TABLE T (class CHAR(10), val INT, offset INT);
+ INSERT INTO T VALUES('A', 1, 1);
+ INSERT INTO T VALUES('A', 3, 3);
+ INSERT INTO T VALUES('A', 5, null);
+ INSERT INTO T VALUES('A', 5, 2);
+ INSERT INTO T VALUES('A', 10, 0);
+ INSERT INTO T VALUES('B', 1, 3);
+ INSERT INTO T VALUES('B', 1, 1);
+ INSERT INTO T VALUES('B', 7, 1);
+
+SELECT class, 
+  val,
+  ROW_NUMBER() OVER (PARTITION BY class ORDER BY val) AS row_num,
+  RANK() OVER (PARTITION BY class ORDER BY val) AS rank,
+  DENSE_RANK() OVER (PARTITION BY class ORDER BY val) AS dense_rank
+ FROM T;
+
+LAG:
+CREATE ROW TABLE T (class CHAR(10), val INT, offset INT);
+ INSERT INTO T VALUES('A', 1, 1);
+ INSERT INTO T VALUES('A', 3, 3);
+ INSERT INTO T VALUES('A', 5, null);
+ INSERT INTO T VALUES('A', 5, 2);
+ INSERT INTO T VALUES('A', 10, 0);
+ INSERT INTO T VALUES('B', 1, 3);
+ INSERT INTO T VALUES('B', 1, 1);
+ INSERT INTO T VALUES('B', 7, 1);
+
+SELECT class, 
+  val, 
+  offset,
+  LEAD(val) OVER (PARTITION BY class ORDER BY val) AS lead,
+  LEAD(val,offset,-val) OVER (PARTITION BY class ORDER BY val) AS lead2,
+  LAG(val) OVER (PARTITION BY class ORDER BY val) AS lag,
+  LAG(val,offset,-val) OVER (PARTITION BY class ORDER BY val) AS lag2
+ FROM T;
+
+
+CREATE ROW TABLE T (class CHAR(10), val INT, offset INT);
+ INSERT INTO T VALUES('A', 1, 1);
+ INSERT INTO T VALUES('A', 3, 3);
+ INSERT INTO T VALUES('A', 5, null);
+ INSERT INTO T VALUES('A', 5, 2);
+ INSERT INTO T VALUES('A', 10, 0);
+ INSERT INTO T VALUES('B', 1, 3);
+ INSERT INTO T VALUES('B', 1, 1);
+ INSERT INTO T VALUES('B', 7, 1);
+
+SELECT class, 
+  val, 
+  offset,
+  LEAD(val) OVER (PARTITION BY class ORDER BY val) AS lead,
+  LEAD(val, offset, -val) OVER (PARTITION BY class ORDER BY val) AS lead2,
+  LAG(val) OVER (PARTITION BY class ORDER BY val) AS lag,
+  LAG(val, offset, -val) OVER (PARTITION BY class ORDER BY val) AS lag2
+ FROM T;
+
+NTILE:
+CREATE ROW TABLE T (class CHAR(10), val INT, offset INT);
+ INSERT INTO T VALUES('A', 1, 1);
+ INSERT INTO T VALUES('A', 3, 3);
+ INSERT INTO T VALUES('A', 5, null);
+ INSERT INTO T VALUES('A', 5, 2);
+ INSERT INTO T VALUES('A', 10, 0);
+ INSERT INTO T VALUES('B', 1, 3);
+ INSERT INTO T VALUES('B', 1, 1);
+ INSERT INTO T VALUES('B', 7, 1);
+
+SELECT class, val,
+  NTILE(3) OVER (PARTITION BY class ORDER BY val) AS NTILE,
+  FIRST_VALUE(val) OVER (PARTITION BY class ORDER BY val) AS first,
+  LAST_VALUE(val) OVER (PARTITION BY class ORDER BY val) AS last,
+  NTH_VALUE(val, 4) OVER (PARTITION BY class ORDER BY val) AS nth
+ FROM T;
+
+PERCENT_RANK:
+CREATE ROW TABLE ProductSales(ProdName VARCHAR(50), Type VARCHAR(20), Sales INT);
+INSERT INTO ProductSales VALUES('Tee Shirt','Plain',21);
+INSERT INTO ProductSales VALUES('Tee Shirt','Lettered',22);
+INSERT INTO ProductSales VALUES('Tee Shirt','Team logo',30);
+INSERT INTO ProductSales VALUES('Hoodie','Plain',60);
+INSERT INTO ProductSales VALUES('Hoodie','Lettered',65);
+INSERT INTO ProductSales VALUES('Hoodie','Team logo',80);
+INSERT INTO ProductSales VALUES('Hoodie','Vintage',67);
+INSERT INTO ProductSales VALUES('Ballcap','Plain',8);
+INSERT INTO ProductSales VALUES('Ballcap','Lettered',40);
+INSERT INTO ProductSales VALUES('Ballcap','Team logo',27);
+
+SELECT ProdName, Type, Sales,
+  PERCENT_RANK() OVER (PARTITION BY ProdName ORDER BY Sales ASC) AS Percent_Rank
+FROM ProductSales
+ORDER BY Sales DESC;
+
+RANDOM_PARTITION:
+DROP TABLE weather;
+CREATE ROW TABLE weather (station INT, ts DATE, temperature FLOAT);
+INSERT INTO weather VALUES(1, '2014-01-01', 0);
+INSERT INTO weather VALUES(1, '2014-01-02', 3);
+INSERT INTO weather VALUES(1, '2014-01-03', 4.5);
+INSERT INTO weather VALUES(1, '2014-01-04', 6);
+INSERT INTO weather VALUES(1, '2014-01-05', 6.3);
+INSERT INTO weather VALUES(1, '2014-01-06', 5.9);
+INSERT INTO weather VALUES(2, '2014-01-01', 1);
+INSERT INTO weather VALUES(2, '2014-01-02', 3.4);
+INSERT INTO weather VALUES(2, '2014-01-03', 5);
+INSERT INTO weather VALUES(2, '2014-01-04', 6.7);
+INSERT INTO weather VALUES(2, '2014-01-05', 4.6);
+INSERT INTO weather VALUES(2, '2014-01-06', 6.9);
+
+SELECT *, RANDOM_PARTITION(0.5, 0.2, 0.3, 0) OVER (PARTITION BY station) AS part_num FROM weather;
+
+RANK:
+CREATE ROW TABLE ProductSales(ProdName VARCHAR(50), Type VARCHAR(20), Sales INT);
+INSERT INTO ProductSales VALUES('Tee Shirt','Plain',21);
+INSERT INTO ProductSales VALUES('Tee Shirt','Lettered',22);
+INSERT INTO ProductSales VALUES('Tee Shirt','Team logo',30);
+INSERT INTO ProductSales VALUES('Hoodie','Plain',60);
+INSERT INTO ProductSales VALUES('Hoodie','Lettered',65);
+INSERT INTO ProductSales VALUES('Hoodie','Team logo',80);
+INSERT INTO ProductSales VALUES('Ballcap','Vintage',60);
+INSERT INTO ProductSales VALUES('Ballcap','Plain',8);
+INSERT INTO ProductSales VALUES('Ballcap','Lettered',40);
+INSERT INTO ProductSales VALUES('Ballcap','Team logo',40);
+
+SELECT ProdName, Type, Sales,
+RANK() OVER ( PARTITION BY ProdName ORDER BY Sales DESC ) AS Rank
+FROM ProductSales
+ORDER BY ProdName, Type;
+
+ROW_NUMBER:
+CREATE ROW TABLE ProductSales(ProdName VARCHAR(50), Type VARCHAR(20), Sales INT);
+INSERT INTO ProductSales VALUES('Tee Shirt','Plain',21);
+INSERT INTO ProductSales VALUES ('Tee Shirt','Lettered',22);
+INSERT INTO ProductSales VALUES ('Tee Shirt','Team logo',30);
+INSERT INTO ProductSales VALUES('Hoodie','Plain',60);
+INSERT INTO ProductSales VALUES ('Hoodie','Lettered',65);
+INSERT INTO ProductSales VALUES ('Hoodie','Team logo',80);
+INSERT INTO ProductSales VALUES('Ballcap','Plain',8);
+INSERT INTO ProductSales VALUES ('Ballcap','Lettered',40);
+INSERT INTO ProductSales VALUES ('Ballcap','Team logo',27);
+
+SELECT ProdName, Type, Sales,
+  ROW_NUMBER() OVER (PARTITION BY ProdName ORDER BY Sales DESC) AS row_num
+FROM ProductSales
+ORDER BY ProdName, Sales DESC;
+
+-- 01 Aggregate Data
+-- world.db
+
+SELECT COUNT(*) FROM Country;
+
+SELECT Region, COUNT(*)
+  FROM Country
+  GROUP BY Region
+;
+
+SELECT Region, COUNT(*) AS Count
+  FROM Country
+  GROUP BY Region
+  ORDER BY Count DESC, Region
+;
+
+-- album.db
+
+SELECT a.title AS Album, COUNT(t.track_number) as Tracks
+  FROM track AS t
+  JOIN album AS a
+    ON a.id = t.album_id
+  GROUP BY a.id
+  ORDER BY Tracks DESC, Album
+;
+
+SELECT a.title AS Album, COUNT(t.track_number) as Tracks
+  FROM track AS t
+  JOIN album AS a
+    ON a.id = t.album_id
+  GROUP BY a.id
+  HAVING Tracks >= 10
+  ORDER BY Tracks DESC, Album
+;
+
+SELECT a.title AS Album, COUNT(t.track_number) as Tracks
+  FROM track AS t
+  JOIN album AS a
+    ON a.id = t.album_id
+  WHERE a.artist = 'The Beatles'
+  GROUP BY a.id
+  HAVING Tracks >= 10
+  ORDER BY Tracks DESC, Album
+;
+
+-- 02 Aggregate functions
+-- world.db
+SELECT COUNT(*) FROM Country;
+SELECT COUNT(Population) FROM Country;
+SELECT AVG(Population) FROM Country;
+SELECT Region, AVG(Population) FROM Country GROUP BY Region;
+SELECT Region, MIN(Population), MAX(Population) FROM Country GROUP BY Region;
+SELECT Region, SUM(Population) FROM Country GROUP BY Region;
+
+-- 03 DISTINCT Aggregates
+-- world.db
+
+SELECT COUNT(HeadOfState) FROM Country;
+SELECT HeadOfState FROM Country ORDER BY HeadOfState;
+SELECT COUNT(DISTINCT HeadOfState) FROM Country;
+
+-- 02 transactions
+-- test.db
+
+CREATE TABLE widgetInventory (
+  id INTEGER PRIMARY KEY,
+  description TEXT,
+  onhand INTEGER NOT NULL
+);
+
+CREATE TABLE widgetSales (
+  id INTEGER PRIMARY KEY,
+  inv_id INTEGER,
+  quan INTEGER,
+  price INTEGER
+);
+
+INSERT INTO widgetInventory ( description, onhand ) VALUES ( 'rock', 25 );
+INSERT INTO widgetInventory ( description, onhand ) VALUES ( 'paper', 25 );
+INSERT INTO widgetInventory ( description, onhand ) VALUES ( 'scissors', 25 );
+
+SELECT * FROM widgetInventory;
+SELECT * FROM widgetSales;
+
+BEGIN TRANSACTION;
+INSERT INTO widgetSales ( inv_id, quan, price ) VALUES ( 1, 5, 500 );
+UPDATE widgetInventory SET onhand = ( onhand - 5 ) WHERE id = 1;
+END TRANSACTION;
+
+BEGIN TRANSACTION;
+INSERT INTO widgetInventory ( description, onhand ) VALUES ( 'toy', 25 );
+ROLLBACK;
+SELECT * FROM widgetInventory;
+
+-- restore database
+DROP TABLE IF EXISTS widgetInventory;
+DROP TABLE IF EXISTS widgetSales;
+
+-- 03 performance
+-- test.db
+
+CREATE TABLE test ( id INTEGER PRIMARY KEY, data TEXT );
+
+-- put this before the 1,000 INSERT statements
+BEGIN TRANSACTION;
+
+-- copy / paste 1,000 of these ...
+INSERT INTO test ( data ) VALUES ( 'this is a good sized line of text.' );
+
+-- put this after the 1,000 INSERT statements
+END TRANSACTION;
+
+SELECT COUNT(*) FROM test;
+
+-- restore database
+DROP TABLE test;
+
+set schema "PRASADKUMAR_BODDU";
+
+CREATE TABLE widgetCustomer ( id INTEGER , name TEXT, last_order_id INT );
+CREATE TABLE widgetSale ( id INTEGER , item_id INT, customer_id INT, quan INT, price INT );
+
+INSERT INTO widgetCustomer (name) VALUES ('Bob');
+INSERT INTO widgetCustomer (name) VALUES ('Sally');
+INSERT INTO widgetCustomer (name) VALUES ('Fred');
+
+SELECT * FROM widgetCustomer;
+
+INSERT INTO widgetSale (item_id, customer_id, quan, price) VALUES (1, 3, 5, 1995);
+INSERT INTO widgetSale (item_id, customer_id, quan, price) VALUES (2, 2, 3, 1495);
+INSERT INTO widgetSale (item_id, customer_id, quan, price) VALUES (3, 1, 1, 2995);
+INSERT INTO widgetSale (item_id, customer_id, quan, price) VALUES (4, 1, 2, 2895);
+SELECT * FROM widgetSale;
+SELECT * FROM widgetCustomer;
+
+
+CREATE TRIGGER TRIGGER1
+AFTER 
+INSERT ON widgetSale FOR EACH ROW
+BEGIN
+INSERT INTO widgetCustomer (name)
+VALUES (CURRENT_USER);
+END;
+
+-- 03 timestamps
+-- test.db
+
+DROP TABLE widgetSale;
+DROP TABLE widgetCustomer;
+DROP TABLE widgetLog;
+
+CREATE TABLE widgetCustomer ( id integer, name TEXT, last_order_id INT, stamp TEXT );
+CREATE TABLE widgetSale ( id integer , item_id INT, customer_id INTEGER, quan INT, price INT, stamp TEXT );
+CREATE TABLE widgetSale1 ( id integer , item_id INT, customer_id INTEGER, quan INT, price INT, stamp TEXT );
+CREATE TABLE widgetLog ( id integer , stamp TEXT, event TEXT, username TEXT, tablename TEXT, table_id INT);
+
+INSERT INTO widgetCustomer (name) VALUES ('Bob');
+INSERT INTO widgetCustomer (name) VALUES ('Sally');
+INSERT INTO widgetCustomer (name) VALUES ('Fred');
+SELECT * FROM widgetCustomer;
+
+CREATE TRIGGER stampSale AFTER INSERT ON widgetSale
+    BEGIN
+        INSERT INTO widgetSale1 
+        SELECT * FROM widgetSale;
+        INSERT INTO widgetLog (stamp, event, username, tablename, table_id)
+            VALUES (TO_NVARCHAR('now'), 'INSERT', 'TRIGGER', 'widgetSale', '1');
+    END
+;
+
+INSERT INTO widgetSale (item_id, customer_id, quan, price) VALUES (1, 3, 5, 1995);
+INSERT INTO widgetSale (item_id, customer_id, quan, price) VALUES (2, 2, 3, 1495);
+INSERT INTO widgetSale (item_id, customer_id, quan, price) VALUES (3, 1, 1, 2995);
+
+SELECT * FROM widgetSale;
+SELECT * FROM widgetSale1;
+SELECT * FROM widgetLog;
+
+
+set schema "PRASADKUMAR_BODDU";
+
+-- 01 simple subselect
+-- world.db
+
+DROP TABLE T;
+CREATE TABLE t ( a NVARCHAR(255), b NVARCHAR(255));
+INSERT INTO t VALUES ( 'NY0123', 'US4567' );
+INSERT INTO t VALUES ( 'AZ9437', 'GB1234' );
+INSERT INTO t VALUES ( 'CA1279', 'FR5678' );
+
+SELECT * FROM t;
+SELECT * FROM Country;
+
+SELECT SUBSTR(a, 1, 2) AS State, SUBSTR(a, 3) AS SCode, 
+  SUBSTR(b, 1, 2) AS Country, SUBSTR(b, 3) AS CCode FROM t;
+
+SELECT co.Name, ss.CCode FROM (
+    SELECT SUBSTR(a, 1, 2) AS State, SUBSTR(a, 3) AS SCode,
+      SUBSTR(b, 1, 2) AS Country, SUBSTR(b, 3) AS CCode FROM t
+  ) AS ss
+  INNER JOIN Country AS co
+  ON co.Code2 = ss.Country
+;
+
+DROP TABLE t;
+
+-- 02 searching within a result set
+-- album.db
+
+SELECT DISTINCT album_id FROM track WHERE duration <= 90;
+
+SELECT * FROM album
+  WHERE id IN (SELECT DISTINCT album_id FROM track WHERE duration <= 90)
+;
+
+SELECT a.title AS album, a.artist, t.track_number AS seq, t.title, t.duration AS secs
+  FROM album AS a
+  JOIN track AS t
+    ON t.album_id = a.id
+  WHERE a.id IN (SELECT DISTINCT album_id FROM track WHERE duration <= 90)
+  ORDER BY a.title, t.track_number
+;
+
+SELECT a.title AS album, a.artist, t.track_number AS seq, t.title, t.duration AS secs
+  FROM album AS a
+  JOIN (
+    SELECT DISTINCT album_id, track_number, duration, title
+      FROM track
+      WHERE duration <= 90
+  ) AS t
+    ON t.album_id = a.id
+  ORDER BY a.title, t.track_number
+;
+
+-- 03 Creating a view
+-- album.db
+
+SELECT id, album_id, title, track_number, 
+  duration/60 AS m, MOD(duration,60) AS s FROM track;
+
+CREATE VIEW trackView AS
+  SELECT id, album_id, title, track_number, 
+    duration / 60 AS m, MOD(duration,60) AS s FROM track;
+    
+SELECT * FROM trackView;
+
+SELECT a.title AS album, a.artist, t.track_number AS seq, t.title, t.m, t.s
+  FROM album AS a
+  INNER JOIN trackView AS t
+    ON t.album_id = a.id
+  ORDER BY a.title, t.track_number
+;
+
+DROP VIEW trackView;
+
+-- 04 Joined view
+-- album.db
+
+SELECT a.artist AS artist,
+    a.title AS album,
+    t.title AS track,
+    t.track_number AS trackno,
+    t.duration / 60 AS m,
+    MOD(t.duration,60) AS s
+  FROM track AS t
+  INNER JOIN album AS a
+  ON a.id = t.album_id
+;
+
+CREATE VIEW joinedAlbum AS
+  SELECT a.artist AS artist,
+      a.title AS album,
+      t.title AS track,
+      t.track_number AS trackno,
+      t.duration / 60 AS m,
+      MOD(t.duration,60) AS s
+    FROM track AS t
+    INNER JOIN album AS a
+    ON a.id = t.album_id
+;
+
+SELECT * FROM joinedAlbum;
+SELECT * FROM joinedAlbum WHERE artist = 'Jimi Hendrix';
+
+SELECT artist, album, track, trackno,m,s,
+   m ||':'|| substr('00' || s, -2, 2) AS duration
+    FROM joinedAlbum;
+
+DROP VIEW joinedAlbum;
+
+-- 01 LENGTH
+SELECT LENGTH('string');
+SELECT Name, LENGTH(Name) AS Len FROM City ORDER BY Len DESC;
+
+--02 CONCAT
+select TOP 10* from City;
+select TOP 10* from Country;
+SELECT concat(NAME,DISTRICT) AS CANCAT FROM City;
+SELECT concat(concat(NAME,'-'),DISTRICT) AS CANCAT FROM City;
+SELECT *,concat(concat(CODE,'-'),NAME) AS CODE-NAME FROM Country;
+
+-- 03 SUBSTR
+SELECT SUBSTR('this string', 6);
+SELECT SUBSTR('this string', 6, 3);
+
+SELECT released,
+    SUBSTR(released, 1, 4) AS year,
+    SUBSTR(released, 6, 2) AS month,
+    SUBSTR(released, 9, 2) AS day
+  FROM album
+  ORDER BY released
+;
+
+
+SELECT *,SUBSTRING (CODE-NAME,1,3) "substring" FROM 
+(SELECT *,concat(concat(CODE,'-'),NAME) AS CODE-NAME FROM Country);
+
+
+SELECT SUBSTR_AFTER ('Hello My Friend','My ') "substr after" FROM DUMMY;
+SELECT SUBSTR_BEFORE ('Hello My Friend','My') "substr before" FROM DUMMY;
+
+SELECT *,SUBSTR_AFTER(CODE-NAME,'-') "substring" FROM 
+(SELECT *,concat(concat(CODE,'-'),NAME) AS CODE-NAME FROM Country);
+
+SELECT *,SUBSTR_BEFORE(CODE-NAME,'-') "substring" FROM 
+(SELECT *,concat(concat(CODE,'-'),NAME) AS CODE-NAME FROM Country);
+
+
+-- 04 TRIM
+
+SELECT TRIM('   string   ');
+SELECT LTRIM('   string   ');
+SELECT RTRIM('   string   ');
+SELECT TRIM('...string...', '.');
+
+-- 05 UPPER/LOWER
+SELECT 'StRiNg' = 'string';
+SELECT LOWER('StRiNg') = LOWER('string');
+SELECT UPPER('StRiNg') = UPPER('string');
+
+SELECT UPPER(Name) FROM City ORDER BY Name;
+SELECT LOWER(Name) FROM City ORDER BY Name;
+
+--6 LEFT
+SELECT LEFT(NAME,3) FROM City;
+
+
+--7 LOCATE
+SELECT Name, CASE WHEN LOCATE(Name,'kab') = 1 then 1 else 0 END AS FLAG FROM City;
+SELECT Name, CASE WHEN LOCATE(Name,'Kab') = 1 then 1 else 0 END AS FLAG FROM City;
+
+--REPLACE
+SELECT REPLACE ('DOWNGRADE DOWNWARD','DOWN', 'UP') "replace" FROM DUMMY;
+SELECT Name,CountryCode,REPLACE(CountryCode,'AFG',1) "REPLACE" FROM City; 
+
+SELECT REPLACE_REGEXPR('.*aa' FLAG 'U' IN 'xxxaabbbaa' WITH 'SWAPPED') FROM dummy; ==> This returns: 'SWAPPEDSWAPPED'
+SELECT REPLACE_REGEXPR('.*aa' IN 'xxxaabbbaa' WITH 'SWAPPED') FROM dummy; ==> This returns: 'SWAPPED'
+
+
+--8 MAP
+SELECT Name,CountryCode,MAP(CountryCode,'AFG',1,'NLD',2,3) "MAP" FROM City; 
+
+SELECT Name,CountryCode,DECODE(CountryCode,'AFG',1,'NLD',2,3) "MAP" FROM City; -- Not available in HANA
+
+--9 MONTH 
+
+SELECT * from "Factinternetsales";
+SELECT *, 
+MONTHNAME ("OrderDate") "MonthName",
+MONTH ("OrderDate") "Month",
+YEAR("OrderDate") "Year",
+MONTHS_BETWEEN("OrderDate","ShipDate") deliveryTime
+from "Factinternetsales";
+
+-- 10 INTEGER division
+SET SCHEMA "PRASADKUMAR_BODDU";
+
+
+SELECT * from "Factinternetsales";
+SELECT "ProductKey","UnitPrice","ExtendedAmount" from "Factinternetsales";
+
+--INTEGER
+SELECT 1 / 2 from dummy;
+SELECT 1.0 from dummy;
+SELECT 1.0 / 2 from dummy;
+SELECT CAST(0.2345 AS INTEGER)  from dummy;
+SELECT CAST(0.2345 AS DECIMAL(2,2))  from dummy;
+SELECT 17 / 5 from dummy;
+SELECT 17 / 5, 17 % 5 from dummy;
+
+-- 11 ROUND()
+
+SELECT 2.55555 ;
+SELECT ROUND(2.55555) from dummy;
+SELECT ROUND(2.55555, 3) from dummy;
+SELECT ROUND(2.55555, 0) from dummy;
+
+
+--12 FLOOR()
+SELECT 2.55555 ;
+SELECT FLOOR(2.55555) from dummy;
+SELECT FLOOR(2.55555, 3) from dummy;
+SELECT FLOOR(2.55555, 0) from dummy;
+
+--13 CEIL()
+SELECT CEIL (14.5) "ceiling" FROM DUMMY;
+SELECT FLOOR (14.5) "floor" FROM DUMMY;
+SELECT ROUND (16.16, 1) "round" FROM DUMMY;
+SELECT ROUND(TO_REAL(399.71429443359375),2) from DUMMY;
+SELECT ROUND( 438.75, 1, ROUND_HALF_UP) "round" FROM DUMMY;
+SELECT ROUND( 438.46,1,ROUND_UP) "round" FROM DUMMY;
+SELECT ROUND( 438.46,1,ROUND_HALF_UP) "round" FROM DUMMY;
+SELECT ROUND( 438.79, 1, ROUND_DOWN) "round" FROM DUMMY;
+
+select "TaxAmt",ROUND("TaxAmt"),CEIL("TaxAmt"),FLOOR("TaxAmt") from "Factinternetsales";
+select "TaxAmt",ROUND("TaxAmt",2),CEIL("TaxAmt",2),FLOOR("TaxAmt",2) from "Factinternetsales";
+select "TaxAmt",ROUND("TaxAmt",2),CEIL("TaxAmt",2),FLOOR("TaxAmt",2) from "Factinternetsales";
+
+--ADD_DAYS & ADD_MONTHS
+SELECT * from "Factinternetsales";
+
+SELECT "OrderDate","DueDate","ShipDate",ADD_DAYS("OrderDate",10),ADD_DAYS("OrderDate",5)
+from "Factinternetsales";
+
+SELECT "OrderDate","DueDate","ShipDate",ADD_DAYS(TO_DATE("OrderDate"),10),ADD_DAYS(TO_DATE("OrderDate"),5)
+from "Factinternetsales";
+
+SELECT ADD_DAYS (TO_DATE ('2009-12-05', 'YYYY-MM-DD'), 30) "add days" FROM DUMMY;
+SELECT ADD_MONTHS (TO_DATE ('2009-12-05', 'YYYY-MM-DD'), 1) "add months" FROM DUMMY;
+SELECT ADD_MONTHS_LAST (TO_DATE ('2009-02-28', 'YYYY-MM-DD'), 1) "add months last" FROM DUMMY;-- returns 2009-03-31, (the last day of March).
+
+
+--Current Date and Time 
+SELECT CURRENT_DATE "current date" FROM DUMMY;
+SELECT CURRENT_TIME "current time" FROM DUMMY;
+SELECT CURRENT_TIMESTAMP "current timestamp" FROM DUMMY;
+SELECT NOW() NOW FROM DUMMY;
+
+--QUARTER AND YEAR
+SELECT QUARTER (TO_DATE('2012-01-01', 'YYYY-MM-DD'), 2) "quarter" FROM DUMMY;
+SELECT YEAR (TO_DATE('2012-01-01', 'YYYY-MM-DD'), 2) "quarter" FROM DUMMY;
+SELECT "OrderDate","DueDate","ShipDate",QUARTER("OrderDate") QuarterOfOrder,YEAR("OrderDate") YearOfOrder
+from "Factinternetsales";
+
+--DAYS
+SELECT DAYNAME ('2011-05-30') "dayname" FROM DUMMY;
+SELECT DAYOFMONTH ('2011-05-30') "dayofmonth" FROM DUMMY;
+SELECT DAYOFYEAR ('2011-05-30') "dayofyear" FROM DUMMY;
+
+
+--DAYS_BETWEEN
+SELECT "OrderDate","DueDate","ShipDate",DAYS_BETWEEN("OrderDate","DueDate"),DAYS_BETWEEN("OrderDate","ShipDate")
+from "Factinternetsales";
+
+SELECT DAYS_BETWEEN (TO_DATE ('2009-12-05', 'YYYY-MM-DD'), TO_DATE('2010-01-05', 'YYYY-MM-DD')) "days between" FROM DUMMY;
+SELECT DAYS_BETWEEN('2018-02-07 23:00:00',  '2018-02-08 01:00:00') AS sinceDays FROM dummy;
+SELECT DAYS_BETWEEN('2018-02-07 23:00:00',  '2018-02-08 23:00:00') AS sinceDays FROM dummy;
+
+
+--CAST()
+SELECT CAST (7 AS VARCHAR) "cast" FROM DUMMY;
+SELECT CAST (10.5 AS INTEGER) "cast" FROM DUMMY;
+
+--COALESCE()
+
+CREATE ROW TABLE coalesce_example (ID INT PRIMARY KEY, A REAL, B REAL);
+ INSERT INTO coalesce_example VALUES(1, 100, 80);
+ INSERT INTO coalesce_example VALUES(2, NULL, 63);
+ INSERT INTO coalesce_example VALUES(3, NULL, NULL);
+ 
+ SELECT * FROM coalesce_example;
+ SELECT id, a, b, COALESCE (a, b*1.1, 50.0) "coalesce" FROM coalesce_example;
+
+--EXTRACT
+EXTRACT ({YEAR | MONTH | DAY | HOUR | MINUTE | SECOND} FROM <d>)
+SELECT EXTRACT (YEAR FROM TO_DATE ('2010-01-04', 'YYYY-MM-DD')) "extract" FROM DUMMY;
+
+--
+SELECT GREATEST ('aa', 'ab', 'ba', 'bb') "greatest" FROM DUMMY;
+SELECT GREATEST (1,2,3,4) "greatest" FROM DUMMY;
+
+SELECT MAX('aa', 'ab', 'ba', 'bb') "greatest" FROM DUMMY;
+SELECT MAX(1,2,3,4) "greatest" FROM DUMMY;
+
+MAX is not same as MAX is Aggregated Function 
+
+SELECT class,MAX(val) from T Group by class;
+
+--FIRST_VALUE()
+
+CREATE COLUMN TABLE F (COL1 DOUBLE, COL2 DOUBLE);
+
+INSERT INTO F VALUES(9, 1);
+INSERT INTO F VALUES(4, 5);
+INSERT INTO F VALUES(7, 3);
+
+SELECT * FROM F;
+SELECT * FROM F ORDER BY COL2;
+SELECT FIRST_VALUE (COL1 ORDER BY COL2) FROM F;
+SELECT LAST_VALUE (COL1 ORDER BY COL2) FROM F;
+
+
+CREATE COLUMN TABLE N (COL1 DOUBLE, COL2 DOUBLE);
+INSERT INTO N VALUES(900, 10);
+INSERT INTO N VALUES(400, 50);
+INSERT INTO N VALUES(700, 30);
+INSERT INTO N VALUES(200, 40);
+
+SELECT * FROM N ORDER BY COL2;
+SELECT FIRST_VALUE (COL1 ORDER BY COL2) FROM N;
+SELECT LAST_VALUE (COL1 ORDER BY COL2) FROM N;
+SELECT NTH_VALUE (COL1, 2 ORDER BY COL2) FROM N;
+
+--ifnull
+
+SELECT IFNULL ('diff', 'same') "ifnull" FROM DUMMY;
+SELECT IFNULL (NULL, 'same') "ifnull" FROM DUMMY;
+SELECT IFNULL (NULL, NULL) "ifnull" FROM DUMMY;
+
+SELECT * from "CUSTOMER"
+
+select 
+"ID",
+"NAME",
+IFNULL("ADDRESS",'NA') "ADDRESS",
+"CITY",
+"STATE",
+"ZIP"
+ from "CUSTOMER"
+
+--NULLIF
+
+SELECT NULLIF ('diff', 'same') "nullif" FROM DUMMY;
+SELECT NULLIF('same', 'same') "nullif" FROM DUMMY;
+SELECT * from "CUSTOMER"
+
+SELECT "ID","NAME","CITY","STATE","ZIP",NULLIF("ADDRESS1",'123') "ADDRESS"  FROM 
+(
+select 
+"ID","NAME","CITY","STATE","ZIP",
+NULLIF("ADDRESS",'123 Main Street') "ADDRESS",
+case when "ADDRESS" like '123%' then '123' else "ADDRESS" END AS "ADDRESS1" 
+from "CUSTOMER"
+ )
+ 
+--INITCAP
+ 
+SELECT INITCAP('the EXAMPLE one') FROM DUMMY;
+
+SELECT *,INITCAP("NAME") NAME1 FROM 
+(
+select "ID",LOWER("NAME") "NAME",LCASE("CITY") "CITY","STATE","ZIP", "ADDRESS"
+from "CUSTOMER"
+)
+
+--LAST_DAY
+SELECT LAST_DAY (TO_DATE('2010-01-04', 'YYYY-MM-DD')) "last day" FROM DUMMY;
+
+--REPLACE
+SELECT REPLACE ('DOWNGRADE DOWNWARD','DOWN', 'UP') "replace" FROM DUMMY;
+
+select 
+"ID","NAME","CITY","STATE","ZIP","ADDRESS",REPLACE("ZIP",'91234','91000') "NEWZIP"
+from "CUSTOMER"
+ 
+

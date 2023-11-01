@@ -1,0 +1,40 @@
+PROCEDURE "HI_ST"."TECH_SUPPORT.STOREDPROCEDURES::USP_TBL_SN_CUSTOMERSERVICE_CASE" ( ) 
+AS  
+BEGIN
+    /*********************************************************************************
+    * Program Name  : USP_TBL_SN_CUSTOMERSERVICE_CASE
+    * Development Request # : 
+    * Date Created  : 05 Dec 2019
+    * Developed By  : Prasad Boddu
+    * Brief Description : Loading data in to the materialized Table TBL_SN_CUSTOMERSERVICE_CASE
+	* by using Function "_SYS_BIC"."BASE_MODELS.HI/SN_CUSTOMERSERVICE_CASE_DERIVED_FIELDS"
+    * --------------------------------------------------------------------------------------------------------------------------
+    * REVISION HISTORY:
+    *---------------------------------------------------------------------------------------------------------------------------
+    * CR#                 Date Modified           Modified By        Brief Description of Change                                                                                                                                                               
+    * T1PRJ0097230         24-01-2019 			  Prasad Boddu       Loading data in to the materialized Tables                                               
+    *********************************************************************************************/
+    DECLARE CUSTOM_COND CONDITION;
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+       INSERT INTO "STAGING"."EXCEPTIONS"("SCHEMA", "STORED_PROCEDURE", "ERROR_CODE", "ERROR_MSG", "TIME_STAMP", "RESOLVED")
+        VALUES('HI_ST', 'USP_TBL_SN_CUSTOMERSERVICE_CASE', ::SQL_ERROR_CODE, 'Error message is: ' || ::SQL_ERROR_MESSAGE, CURRENT_TIMESTAMP, 0);
+    	SIGNAL CUSTOM_COND SET MESSAGE_TEXT = 'Error message is: ' || ::SQL_ERROR_MESSAGE;
+    END;
+--  >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> LOAD GLOBAL BASE <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+INSERT INTO  "HI_ST"."TBL_SN_CUSTOMERSERVICE_CASE_FF"
+SELECT * FROM "_SYS_BIC"."BASE_MODELS.HI/SN_CUSTOMERSERVICE_CASE_DERIVED_FIELDS"; 
+COMMIT;
+
+TRUNCATE TABLE HI_ST.TBL_SN_CUSTOMERSERVICE_CASE;
+
+INSERT INTO HI_ST.TBL_SN_CUSTOMERSERVICE_CASE 
+  SELECT * FROM "_SYS_BIC"."BASE_MODELS.HI/SN_CUSTOMERSERVICE_CASE_DERIVED_FIELDS";  
+COMMIT;
+
+TRUNCATE TABLE "HI_ST"."TBL_SN_CUSTOMERSERVICE_CASE_FF";
+COMMIT;
+ 
+END;

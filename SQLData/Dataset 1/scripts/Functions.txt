@@ -1,0 +1,259 @@
+---------------------- SQL Functions ----------------------
+/*
+-- SQL provides many built-in functions to perform operations on data. 
+-- These functions are useful while performing mathematical calculations, string concatenations, sub-strings, date & time etc.
+-- SQL functions can be broadly categorized into following categories:
+    - Scalar functions: functions that take a single row/value as input and return a single value
+    - Aggregate functions: functions that take multiple rows/values as input and return a single value
+    - Window functions: subset of aggregate functions that can operate on a subset of rows
+    - Table functions: functions that return results in tabular format
+    - System functions: functions that perform control operations or return system-level information
+*** We will work on couple of functions from each of above categories.
+
+We have already seen below functions:
+1.) AVG
+2.) COUNT
+3.) SUM
+4.) MIN
+5.) MAX
+6.) ROW_NUMBER
+
+-- Other important functions
+ABS
+ADD_MONTHS
+AS_DATE, AS_CHAR, AS_INTEGER
+CASE
+CAST
+CEIL, FLOOR
+CHARINDEX
+COALESCE
+COMPRESS
+CONCAT
+CURRENT_DATE, CURRENT_TIME, CURRENT_TIMESTAMP
+DATE_PART
+DATE_TRUNC
+DATEADD
+DATEDIFF
+DAYNAME
+RANK, DENSE_RANK
+STARTSWITH, ENDSWITH
+EXTRACT
+GET_DDL
+HASH
+HOUR/MINUTE/SECOND
+IFF
+IFNULL
+INSERT
+IS_DATE, IS_CHAR, IS_INTEGER
+LAG
+LAST_DAY
+LEFT
+RIGHT
+LEN, LENGTH
+LOWER, UPPER
+LTRIM, RTRIM
+MOD
+MONTHNAME
+NVL
+REPLACE
+REVERSE
+RIGHT
+SPLIT
+SPLIT_PART
+SUBSTR, SUBSTRING
+SYSDATE
+TO_DATE, TO_CHAR, TO_INTEGER
+TRANSLATE
+TRIM
+TRUNCATE, TRUNC
+YEAR/DAY/WEEK/MONTH/QUARTER
+
+--SYSTEM FUNCTIONS:
+CURRENT_ACCOUNT
+CURRENt_USER
+CURRENT_SESSION
+CURRENT_ROLE
+CURRENT_REGION
+*/
+
+-- ABS: Returns the absolute value of a numeric expression.
+select * from "SNOWFLAKE_SAMPLE_DATA"."TPCH_SF100"."CUSTOMER";
+
+select *, abs(c_acctbal) as positive_acct_bal from "SNOWFLAKE_SAMPLE_DATA"."TPCH_SF100"."CUSTOMER";
+
+-- CEIL: Returns values rounded to the nearest equal or larger integer
+select DISTINCT c_acctbal, abs(c_acctbal) AS abs,ceil(c_acctbal) as ceil ,floor(c_acctbal) as floor,
+round(c_acctbal) as round
+from "SNOWFLAKE_SAMPLE_DATA"."TPCH_SF100"."CUSTOMER";
+
+-- FLOOR: Returns values rounded to the nearest equal or smaller integer
+select *, floor(c_acctbal) as positive_acct_bal from "SNOWFLAKE_SAMPLE_DATA"."TPCH_SF001"."CUSTOMER";
+
+-- COALESCE: Returns the first non-NULL expression among its arguments, or NULL if all its arguments are NULL.
+SELECT column1, column2, column3, coealesc(column1, column2, column3,5)
+FROM (values
+  (1,    2,    3   ),
+  (null, 2,    3   ),
+  (null, null, 3   ),
+  (null, null, null),
+  (1,    null, 3   ),
+  (1,    null, null),
+  (1,    2,    null)
+) x;
+
+
+
+SELECT column1, column2, column3, nvl(column1, column2)
+FROM (values
+  (1,    2,    3   ),
+  (null, 2,    3   ),
+  (null, null, 3   ),
+  (null, null, null),
+  (1,    null, 3   ),
+  (1,    null, null),
+  (1,    2,    null)
+) x;
+
+-- COMPRESS: Compresses the input string or binary value with a compression method.
+    -- outputs binary value/hexadecimal characters for readability.
+/* snowflake supported compression methods:
+    SNAPPY
+    ZLIB
+    ZSTD
+    BZ2
+*/
+select *, compress(c_mktsegment, 'snappy') as new_mktsegment from "SNOWFLAKE_SAMPLE_DATA"."TPCH_SF100"."CUSTOMER";
+
+-- CONCAT: Concatenates one or more strings, or concatenates one or more binary values. 
+        -- If any of the values is null, the result is also null.
+-- The || operator provides alternative syntax for CONCAT and requires at least two arguments.
+select *, concat(c_name, ' - ', c_mktsegment) as new_identifier from "SNOWFLAKE_SAMPLE_DATA"."TPCH_SF100"."CUSTOMER";
+select concat('Kashish ', 'Gakkar');
+select 'Kashish '|| 'Gakkar';
+
+-- UPPER: Converts the string into UPPERCASE
+-- LOWER: Converts the string into LOWERCASE
+
+select top 10 C_NAME, 
+    upper(C_NAME) as uppercase_comment,
+    lower(C_NAME) as lowercase_segment
+    from "SNOWFLAKE_SAMPLE_DATA"."TPCH_SF100"."CUSTOMER" ;
+    
+-- SUBSTR, SUBSTRING: Returns the portion of the string or binary value from original string. Length is optional parameter.
+-- SUBSTR(string, start_pos, length) or SUBSTRING(string, start_pos, length)
+select c_mktsegment, 
+        substr(c_mktsegment, 2,6) as short_segment ,
+        substring(c_mktsegment, 2, 4) as same_short_segment 
+from "SNOWFLAKE_SAMPLE_DATA"."TPCH_SF100"."CUSTOMER" limit 10;
+
+
+select *, 
+        substr(c_mktsegment, 2) as short_segment ,
+        substring(c_mktsegment, 2, 4) as same_short_segment 
+from "SNOWFLAKE_SAMPLE_DATA"."TPCH_SF001"."CUSTOMER" limit 10;
+
+
+--SUBSTR(COLUMN,STRT,LENGTH)
+select *, 
+        substr(c_mktsegment, 2) as short_segment ,
+        substring(c_mktsegment, -4, 2) as same_short_segment 
+from "SNOWFLAKE_SAMPLE_DATA"."TPCH_SF100"."CUSTOMER" limit 10;
+
+------------------ DATE FUNCTIONS ------------------
+-- CURRENT_DATE, CURRENT_TIME, CURRENT_TIMESTAMP
+select  
+    CURRENT_DATE() as today_date,
+    CURRENT_TIME() as present_time,
+    CURRENT_TIMESTAMP() as present_timestamp
+    from DUAL;
+    
+
+
+-- DATE_PART: Extracts the specified date or time part from a date, time, or timestamp.
+select 
+    CURRENT_TIMESTAMP() as present_timestamp,
+    DATE_PART(hour, CURRENT_TIMESTAMP) as time_hours,
+    DATE_PART(minute, CURRENT_TIMESTAMP) as time_minutes,
+    DATE_PART(second, CURRENT_TIMESTAMP) as time_seconds,
+    DATE_PART(year, CURRENT_TIMESTAMP) as year_,
+    DATE_PART(quarter, CURRENT_TIMESTAMP) as quarter_,
+    DATE_PART(month, CURRENT_TIMESTAMP) as month_
+    from DUAL;
+
+-- DATE_TRUNC: Truncates a DATE, TIME, or TIMESTAMP to the specified precision and is not the same as extraction
+-- TO_DATE, TO_TIMESTAMP, TO_TIME: Converts a string into respective format
+-- DAYNAME: Writes the current day of the week
+
+SELECT TO_DATE('2022-12-22T23:39:18.245-09:00') AS "DATE1",
+       DATE_TRUNC('YEAR', "DATE1") AS "TRUNCATED TO YEAR",
+       DATE_TRUNC('MONTH', "DATE1") AS "TRUNCATED TO MONTH",
+       DATE_TRUNC('DAY', "DATE1") AS "TRUNCATED TO DAY",
+       DAYNAME(DATE1) as CURRENT_DAY;
+       
+SELECT TO_TIMESTAMP('2020-06-22T23:39:18.245-09:00') AS "TIMESTAMP1",
+        DATE_TRUNC('HOUR', "TIMESTAMP1") AS "TRUNCATED TO HOUR",
+       DATE_TRUNC('MINUTE', "TIMESTAMP1") AS "TRUNCATED TO MINUTE",
+       DATE_TRUNC('SECOND', "TIMESTAMP1") AS "TRUNCATED TO SECOND";
+       
+
+
+-- DATEADD: Adds the specified value for the specified date or time part to a date, time, or timestamp.
+create table test_dates as 
+select o_orderdate,
+        dateadd(year, 5, o_orderdate) as new_orderdate_year,
+        dateadd(month, 7, o_orderdate) as new_orderdate_month,
+        dateadd(quarter, 1, o_orderdate) as new_orderdate_quarter
+from "SNOWFLAKE_SAMPLE_DATA"."TPCH_SF100"."ORDERS";
+
+select * from test_Dates;
+
+-- DATEDIFF: Calculates the difference between two date, time, or timestamp expressions based on the date or time part requested. 
+          -- The function returns the result of subtracting the second argument from the third argument.
+          -- The minus sign (“-“) can also be used to subtract dates.      
+          
+select * from test_dates;
+
+select o_orderdate, new_orderdate_year, datediff(year, o_orderdate, new_orderdate_year) as diff_year,
+        o_orderdate, new_orderdate_month, datediff(month, o_orderdate, new_orderdate_month) as diff_month,
+        o_orderdate, new_orderdate_quarter, datediff(quarter, o_orderdate, new_orderdate_quarter) as diff_quarter
+from test_dates limit 10;
+
+--SYSTEM FUNCTIONS:
+select CURRENT_ACCOUNT(), 
+        CURRENt_USER(),
+        CURRENT_SESSION(),
+        CURRENT_ROLE(),
+        CURRENT_REGION();
+
+/*
+-------------------- TRANSACTION, COMMIT & ROLLBACK --------------------
+drop table new_employees;
+*/
+
+create or replace table new_employees1(employee_id number,
+                     empl_join_date date,
+                     dept varchar(10),
+                     salary number,
+                     manager_id number);
+                     
+insert into new_employees1 values(8,'2014-10-01','HR',40000,4),
+                                 (12,'2014-09-01','Tech',50000,9),
+                                 (3,'2018-09-01','Marketing',30000,5),
+                                 (4,'2017-09-01','HR',10000,5),
+                                 (25,'2019-09-01','HR',35000,9),
+                                 (12,'2014-09-01','Tech',50000,9),
+                                 (86,'2015-09-01','Tech',90000,4),
+                                 (73,'2016-09-01','Marketing',20000,1);
+                                 
+                                 
+select * from new_employees1;
+
+SELECT CURRENT_TRANSACTION();
+
+commit;
+
+rollback;
+
+show transactions;
+
+alter session set autocommit = True;

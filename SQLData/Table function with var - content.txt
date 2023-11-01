@@ -1,0 +1,45 @@
+CREATE FUNCTION  TALENT.JOBVITE.F_TRACKS( )
+RETURNS TABLE (
+artist NVARCHAR(255),
+album NVARCHAR(255),
+track NVARCHAR(255),
+trackno INTEGER,
+m DECIMAL,
+s INTEGER
+)
+AS
+'SELECT a.artist AS artist,
+    a.title AS album,
+    t.title AS track,
+    t.track_number AS trackno,
+    t.duration / 60 AS m,
+    MOD(t.duration,60) AS s
+  FROM TALENT.JOBVITE.TRACK AS t
+  INNER JOIN TALENT.JOBVITE.ALBUM AS a
+  ON a.id = t.album_id'
+;
+
+
+CREATE FUNCTION "TALENT"."JOBVITE"."TRACKS_ALBUM" ( ) 
+RETURNS TABLE (
+album NVARCHAR(255),
+artist NVARCHAR(255),
+seq INTEGER,
+title NVARCHAR(255),
+secs INTEGER
+)
+AS
+'with 
+Tracks_lt_90 as (SELECT DISTINCT album_id, track_number, duration, title
+ FROM "TALENT"."JOBVITE"."TRACK" WHERE duration <= 90 ),
+
+total_album as(SELECT * FROM "TALENT"."JOBVITE"."ALBUM"),
+
+
+var_out as (SELECT a.title AS album, a.artist, t.track_number AS seq, t.title, t.duration AS secs 
+from total_album a
+INNER JOIN Tracks_lt_90 t
+ON t.album_id = a.id
+ORDER BY a.title, t.track_number)
+ 
+select * from var_out';

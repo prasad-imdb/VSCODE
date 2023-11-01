@@ -1,0 +1,39 @@
+CREATE TABLE PRASAD.SCHEMA.CUSTOMERS(
+    id              INTEGER PRIMARY KEY, 
+    name            NVARCHAR(255),
+    address         NVARCHAR(255),
+    city            NVARCHAR(255),
+    state           NVARCHAR(255),
+    zip             NVARCHAR(255)
+);
+
+CREATE TABLE PRASAD.SCHEMA.ITEM (
+    id              INTEGER PRIMARY KEY,
+    name            NVARCHAR(255),
+    description     NVARCHAR(255)
+);
+
+CREATE TABLE PRASAD.SCHEMA.SALE (
+    id              INTEGER PRIMARY KEY,
+    item_id         INTEGER,
+    customer_id     INTEGER,
+    date            NVARCHAR(255),
+    quantity        INTEGER,
+    price           INTEGER     -- in cents
+);
+
+INSERT INTO PRASAD.SCHEMA.CUSTOMERS ( id, name, address, city, state, zip ) VALUES ( 1, 'Bill Smith', '123 Main Street', 'Hope', 'CA', '98765' );
+INSERT INTO PRASAD.SCHEMA.CUSTOMERS ( id, name, address, city, state, zip ) VALUES ( 2, 'Mary Smith', '123 Dorian Street', 'Harmony', 'AZ', '98765' );
+INSERT INTO PRASAD.SCHEMA.CUSTOMERS ( id, name, address, city, state, zip ) VALUES ( 3, 'Bob Smith', '123 Laugh Street', 'Humor', 'CA', '98765' );
+
+INSERT INTO PRASAD.SCHEMA.ITEM ( id, name, description ) VALUES ( 1, 'Box of 64 Pixels', '64 RGB pixels in a decorative box' );
+INSERT INTO PRASAD.SCHEMA.ITEM ( id, name, description ) VALUES ( 2, 'Sense of Humor', 'Especially dry. Imported from England.' );
+INSERT INTO PRASAD.SCHEMA.ITEM ( id, name, description ) VALUES ( 3, 'Beauty', 'Inner beauty. No cosmetic surgery required!' );
+INSERT INTO PRASAD.SCHEMA.ITEM ( id, name, description ) VALUES ( 4, 'Bar Code', 'Unused. In original packaging.' );
+
+INSERT INTO PRASAD.SCHEMA.SALE ( id, item_id, customer_id, date, quantity, price ) VALUES ( 1, 1, 2, '2009-02-27', 3, 2995 );
+INSERT INTO PRASAD.SCHEMA.SALE ( id, item_id, customer_id, date, quantity, price ) VALUES ( 2, 2, 2, '2009-02-27', 1, 1995 );
+INSERT INTO PRASAD.SCHEMA.SALE ( id, item_id, customer_id, date, quantity, price ) VALUES ( 3, 1, 1, '2009-02-28', 1, 2995 );
+INSERT INTO PRASAD.SCHEMA.SALE ( id, item_id, customer_id, date, quantity, price ) VALUES ( 4, 4, 3, '2009-02-28', 2, 999 );
+INSERT INTO PRASAD.SCHEMA.SALE ( id, item_id, customer_id, date, quantity, price ) VALUES ( 5, 1, 2, '2009-02-28', 1, 2995 );
+COMMIT;

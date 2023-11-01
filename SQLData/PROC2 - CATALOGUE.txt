@@ -1,0 +1,350 @@
+CREATE PROCEDURE <proc_name> [(<parameter_clause>)] 
+[LANGUAGE <lang>] 
+[SQL SECURITY <mode>] 
+[DEFAULT SCHEMA <default_schema_name>]
+[READS SQL DATA [WITH RESULT VIEW <view_name>]] 
+AS
+BEGIN [SEQUENTIAL EXECUTION]
+[STATEMENTS]
+END 
+
+
+1)
+CREATE PROCEDURE "PRASADKUMAR_BODDU"."PRASADKUMAR_BODDU::STORES_REVENUE_CAT"
+(IN PROD_NAME  nvarchar(55)) 
+	LANGUAGE SQLSCRIPT
+	SQL SECURITY INVOKER 
+	READS SQL DATA AS
+BEGIN
+/*****************************/
+SELECT
+    "STORE_NAME",
+    "PRODUCT_NAME",
+    SUM("QUANTITY" * "PRICE") AS revenue
+FROM
+    "SALES" 
+        INNER JOIN
+    "PRODUCTS" ON "PRODUCTS"."ID" = "SALES"."PRODUCT_ID"
+        INNER JOIN
+    "STORES" ON "STORES"."ID" = "SALES"."STORE_ID"
+where "PRODUCT_NAME" = :PROD_NAME
+GROUP BY "STORE_NAME" , "PRODUCT_NAME";
+
+END;
+
+CALL "PRASADKUMAR_BODDU"."PRASADKUMAR_BODDU::STORES_REVENUE_CAT"('iPad');
+
+
+2) 
+
+CREATE PROCEDURE "PRASADKUMAR_BODDU".ProcWithResultView(OUT o1 CUSTOMER)
+LANGUAGE SQLSCRIPT
+READS SQL DATA WITH RESULT VIEW "PRASADKUMAR_BODDU".ProcView AS
+BEGIN
+o1 = select * from "PRASADKUMAR_BODDU"."CUSTOMER";
+END
+
+SELECT * FROM "PRASADKUMAR_BODDU".ProcView
+
+DROP PROCEDURE "PRASADKUMAR_BODDU".ProcWithResultView
+
+3)
+
+CREATE PROCEDURE "PRASADKUMAR_BODDU".CustomerResultView(IN id INTEGER,OUT o1 CUSTOMER)
+LANGUAGE SQLSCRIPT
+READS SQL DATA WITH RESULT VIEW "PRASADKUMAR_BODDU".CustomerView AS
+BEGIN
+o1 = select * from "PRASADKUMAR_BODDU"."CUSTOMER" where "ID" = :id;
+END
+
+SELECT * FROM CustomerView (PLACEHOLDER."$$id$$" => '5');
+
+DROP PROCEDURE "PRASADKUMAR_BODDU".CustomerResultView
+
+4)
+
+CREATE TYPE "PRASADKUMAR_BODDU"."STORES_REV" AS TABLE
+(
+"STORE_NAME" NVARCHAR(255),
+"PRODUCT_NAME" NVARCHAR(255),
+"REVENUE" DECIMAL(10,2)) 
+
+CREATE PROCEDURE "PRASADKUMAR_BODDU"."STORES_REVENUE"(OUT o1 "PRASADKUMAR_BODDU"."STORES_REV")
+LANGUAGE SQLSCRIPT
+READS SQL DATA WITH RESULT VIEW "PRASADKUMAR_BODDU"."STORES_REVENUE_VIEW" AS
+BEGIN
+o1 = 
+SELECT "STORE_NAME","PRODUCT_NAME", SUM("QUANTITY" * "PRICE") AS revenue
+FROM "PRASADKUMAR_BODDU"."SALES" 
+INNER JOIN "PRASADKUMAR_BODDU"."PRODUCTS" 
+ON "PRODUCTS"."ID" = "SALES"."PRODUCT_ID"
+INNER JOIN "PRASADKUMAR_BODDU"."STORES" 
+ON "STORES"."ID" = "SALES"."STORE_ID"
+GROUP BY "STORE_NAME" , "PRODUCT_NAME";
+END
+
+
+SELECT * FROM "PRASADKUMAR_BODDU"."STORES_REVENUE_VIEW"
+
+5)
+set schema "PRASADKUMAR_BODDU";
+create type mytab_t as table (i int);
+create table mytab (i int);
+insert into mytab values (0);
+insert into mytab values (1);
+insert into mytab values (2);
+insert into mytab values (3);
+insert into mytab values (4);
+insert into mytab values (5);
+
+create procedure myproc (in intab mytab_t,in i int, out outtab mytab_t) as
+begin
+outtab = select i from :intab where i > :i;
+end;
+
+call myproc(intab=>mytab, i=>2, outtab =>?);
+
+call myproc( i=>2, intab=>mytab, outtab =>?)
+
+6) Passing Table as parameter
+
+CREATE TYPE ML_TYPE AS TABLE
+("Id" INTEGER,
+ "Title" NVARCHAR(65),
+ "Category" NVARCHAR(65));
+
+
+SELECT * FROM "PRASADKUMAR_BODDU"."MOVIE_LIST";
+
+SET SCHEMA "PRASADKUMAR_BODDU";
+
+CREATE PROCEDURE test_table (IN tab "PRASADKUMAR_BODDU"."ML_TYPE")
+AS
+BEGIN
+SELECT * FROM :tab;
+END
+
+CALL test_table ("PRASADKUMAR_BODDU"."MOVIE_LIST");
+
+
+7)
+CREATE PROCEDURE proc (OUT z INT) 
+LANGUAGE SQLSCRIPT READS SQL DATA
+AS
+BEGIN
+DECLARE a integer;
+DECLARE b integer default 0;
+DECLARE c integer default 0;
+
+t = SELECT * FROM T ;
+select count(*) into a from :t;
+b = :a + 1;
+z = :b + :c;
+end;
+
+call proc(?);
+
+8)
+
+SET SCHEMA "PRASADKUMAR_BODDU"
+CREATE TABLE mytab1(a int);
+CREATE TABLE mytab2(a int);
+CREATE TABLE mytab3(a int);
+INSERT INTO mytab1 VALUES(1);
+INSERT INTO mytab2 VALUES(2);
+INSERT INTO mytab3 VALUES(3);
+
+CREATE PROCEDURE nested_block_loop(IN inval INT, OUT val INT) LANGUAGE SQLSCRIPT READS SQL DATA AS
+BEGIN
+DECLARE a1 int;
+DECLARE a2 int;
+DECLARE a3 int;
+DECLARE v1 int default 1;
+DECLARE v2 int default 1;
+DECLARE v3 int default 1;
+DECLARE CURSOR C FOR SELECT * FROM mytab1;
+OPEN C;
+FETCH C into a1;
+CLOSE C;
+LOOP
+DECLARE CURSOR C FOR SELECT * FROM mytab2;
+OPEN C;
+FETCH C into a2;
+CLOSE C;
+LOOP
+DECLARE CURSOR C FOR SELECT * FROM mytab3;
+OPEN C;
+FETCH C INTO a3;
+CLOSE C;
+IF :v2 = 1 THEN
+BREAK;
+END IF;
+END LOOP;
+IF :v1 = 1 THEN
+BREAK;
+END IF;
+END LOOP;
+IF :inval = 1 THEN
+val = :a1;
+ELSEIF :inval = 2 THEN
+val = :a2;
+ELSEIF :inval = 3 THEN
+val = :a3;
+END IF;
+END;
+call nested_block_loop(1, ?)
+--> OUT:[1]
+call nested_block_loop(2, ?)
+--> OUT:[2]
+call nested_block_loop(3, ?)
+--> OUT:[3] 
+
+
+9)
+
+CREATE PROCEDURE upsert_proc (IN v_bookid VARCHAR(20))
+LANGUAGE SQLSCRIPT AS
+BEGIN
+DECLARE fnd INT = 1;
+SELECT count(*) INTO fnd FROM "PRASADKUMAR_BODDU"."books" WHERE "book_id" = :v_bookid;
+IF :fnd = 0
+THEN
+insert into "PRASADKUMAR_BODDU"."books" values (:v_bookid,'In-Memory Data Management','150',4.5,NULL,'2019-01-01','91');
+ELSE
+UPDATE "PRASADKUMAR_BODDU"."books" SET "rating" = 4.75 WHERE "book_id" =:v_bookid;
+END IF;
+END;
+
+
+call upsert_proc('997');
+
+
+10)
+
+SET SCHEMA "PRASADKUMAR_BODDU"
+CREATE column TABLE "PRASADKUMAR_BODDU".mytab5(a int,b NVARCHAR(55),c NVARCHAR(55) );
+CREATE column TABLE "PRASADKUMAR_BODDU".mytab10(a int,b NVARCHAR(55),c NVARCHAR(55) );
+CREATE column TABLE "PRASADKUMAR_BODDU".mytab20(a int,b NVARCHAR(55),c NVARCHAR(55) );
+
+CREATE COLUMN TABLE "PRASADKUMAR_BODDU"."EXCEPTION" AS
+(
+SELECT TOP 10* FROM "STAGING"."EXCEPTIONS"
+)
+
+CREATE COLUMN TABLE "PRASADKUMAR_BODDU"."EXCEPTION" ("SCHEMA" VARCHAR(100),
+	 "STORED_PROCEDURE" VARCHAR(100),
+	 "ERROR_CODE" VARCHAR(50),
+	 "ERROR_MSG" VARCHAR(2000),
+	 "TIME_STAMP" LONGDATE CS_LONGDATE,
+	 "RESOLVED" TINYINT CS_INT,
+	 "RESOLVED_DATETIME" LONGDATE CS_LONGDATE,
+	 "RESOLVED_BY" VARCHAR(100)) UNLOAD PRIORITY 5 AUTO MERGE 
+	 
+	 
+
+INSERT INTO mytab5 VALUES(1,'prasad','SAP HANA');
+INSERT INTO mytab5 VALUES(2,'balaji','Tableue');
+INSERT INTO mytab5 VALUES(3,'Rajesh','C');
+INSERT INTO mytab5 VALUES(4,'Sai','SAP HANA');
+INSERT INTO mytab5 VALUES(5,'pratap','Tableue');
+INSERT INTO mytab5 VALUES(6,'Chandra','C++');
+
+
+drop procedure nested_block_loop;
+
+CREATE PROCEDURE "PRASADKUMAR_BODDU".nested_block_loop
+(IN IN_SKILL  nvarchar(10)) 
+LANGUAGE SQLSCRIPT 
+AS
+BEGIN
+---------------------------------
+
+
+----------------------------------
+DECLARE a1 int;
+DECLARE a2 CHAR(55);
+DECLARE a3 CHAR(55);
+DECLARE v_loop_a1 int;
+
+
+DECLARE CURSOR C FOR SELECT a,b,c FROM "PRASADKUMAR_BODDU".mytab5 where c = :IN_SKILL ;
+
+DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+    INSERT INTO "PRASADKUMAR_BODDU"."EXCEPTION"("SCHEMA", "STORED_PROCEDURE", "ERROR_CODE", "ERROR_MSG", "TIME_STAMP", "RESOLVED")
+    VALUES('PRASADKUMAR_BODDU', 'nested_block_loop', ::SQL_ERROR_CODE, 'Error message is: ' || ::SQL_ERROR_MESSAGE, CURRENT_TIMESTAMP, 0);
+END;
+
+/*IF ( IN_SKILL = 'SAP HANA') OR (IN_SKILL = 'Tableue')  THEN 
+    	DELETE FROM "PRASADKUMAR_BODDU".mytab10;
+		WHERE c = :IN_SKILL;
+ ELSEIF 
+END IF;*/
+	   
+
+FOR cur_row as C  
+	 DO 
+	 	a1 :=  cur_row.a;
+		a2 :=  cur_row.b;
+		a3 :=  cur_row.c;
+			
+		IF ( IN_SKILL = 'SAP HANA') OR (IN_SKILL = 'Tableue') 
+		  	THEN
+		  		v_loop_a1 := cur_row.a + 100;
+		  			  		
+		  		INSERT INTO "PRASADKUMAR_BODDU".mytab10 
+				VALUES (:v_loop_a1,cur_row.b,cur_row.c);				
+							
+		 	ELSEIF (IN_SKILL = 'C') OR (IN_SKILL = 'C++')
+		 	THEN
+		 		v_loop_a1 := cur_row.a + 500;
+		  			  		
+		  		INSERT INTO "PRASADKUMAR_BODDU".mytab20 
+				VALUES (:v_loop_a1,cur_row.b,cur_row.c);
+	
+		 END IF;
+END FOR;
+END;
+
+
+11) DYNAMIC SQL Example
+
+SET SCHEMA "PRASADKUMAR_BODDU";
+CREATE TABLE tab1 (i int);
+
+DROP PROCEDURE PROC_DYNAMIC_SQL
+CREATE PROCEDURE PROC_DYNAMIC_SQL(i int) AS
+BEGIN
+EXEC 'DELETE from tab1';
+EXEC 'INSERT INTO tab1 VALUES (' || :i || ')';
+EXECUTE IMMEDIATE 'SELECT * FROM tab1 ORDER BY i';
+END;
+
+
+CALL PROC_DYNAMIC_SQL('6');
+
+
+
+-------------------------------------------------------
+Running Total/Rolling Sum
+
+SELECT   "SalesOrderNumber"
+         ,"OrderDate"
+         ,"SalesAmount"
+         ,SUM("SalesAmount") OVER(PARTITION BY "OrderDate" ORDER BY "SalesOrderNumber") "RunningTotal"
+from "PRASADKUMAR_BODDU"."FactInternetSales" T1
+ORDER BY "SalesOrderNumber"
+         ,"SalesAmount"
+
+
+-------------------------------------------------------
+HINTS:
+
+tab = select A, B, C from T where A = 1;
+tab2 = select C from :tab where C = 0;
+
+select C from (select A,B,C from T where A = 1) where C=0;
+
+
+tab = select A, B, C from T where A = 1 WITH HINT(NO_INLINE);
+tab2 = select C from :tab where C = 0;

@@ -1,0 +1,540 @@
+-------------------- SUB QUERIES --------------------
+/*
+ "DEMO_DB"."EMPLOYEE"
+******* Subquery can be simply defined as a query within another query *******
+
+-- RULES for Subqueries:
+    - You can place Subquery in following SQL clauses: WHERE, HAVING and FROM.
+    - They can be used with SELECT, UPDATE, INSERT, DELETE statements along with expression operator. 
+      It could be equality operator or comparison operator such as =, >, =, <= and Like operator.
+    - A subquery is a query within another query. The outer query is called as main query and inner query is called as subquery.
+    - The subquery generally executes first, and its output is used to complete the query condition for the main or outer query.
+    - Subquery must be enclosed in parentheses.
+    - Subqueries are on the right side of the comparison operator.
+    - ORDER BY command cannot be used in a Subquery. GROUPBY command can be used to perform same function as ORDER BY command.
+*/
+
+-- SUBQUERY in FROM clause
+
+select *
+from "SNOWFLAKE_SAMPLE_DATA"."TPCH_SF001"."CUSTOMER" as A
+inner join (select * from "SNOWFLAKE_SAMPLE_DATA"."TPCH_SF001"."ORDERS" 
+           where o_orderpriority = '5-LOW') B
+on A.c_custkey = B.o_custkey;
+
+select *
+from "SNOWFLAKE_SAMPLE_DATA"."TPCH_SF001"."CUSTOMER" as A
+inner join (select * from "SNOWFLAKE_SAMPLE_DATA"."TPCH_SF001"."ORDERS" 
+         where o_orderpriority IN ('5-LOW','1-URGENT')) B
+on A.c_custkey = B.o_custkey;
+
+-- SUBQUERY in WHERE clause
+
+select * 
+from "SNOWFLAKE_SAMPLE_DATA"."TPCH_SF001"."CUSTOMER"
+where c_custkey IN
+                (select distinct o_custkey 
+                 from "SNOWFLAKE_SAMPLE_DATA"."TPCH_SF001"."ORDERS" 
+                 where o_orderpriority = '5-LOW');
+                 
+select * 
+from "SNOWFLAKE_SAMPLE_DATA"."TPCH_SF001"."CUSTOMER"
+where c_custkey IN
+                (select distinct o_custkey 
+                 from "SNOWFLAKE_SAMPLE_DATA"."TPCH_SF001"."ORDERS" 
+                 where o_orderpriority = '5-LOW' 
+                       and o_orderdate >= '1996-01-01');
+
+
+-- SUBQUERY in FROM and WHERE clauses
+
+select *
+from "SNOWFLAKE_SAMPLE_DATA"."TPCH_SF001"."CUSTOMER" A
+left join (select * from "SNOWFLAKE_SAMPLE_DATA"."TPCH_SF001"."ORDERS" 
+           where o_orderpriority = '5-LOW') B
+on A.c_custkey = B.o_custkey
+where c_custkey IN
+                (select distinct o_custkey 
+                 from "SNOWFLAKE_SAMPLE_DATA"."TPCH_SF001"."ORDERS" 
+                 where c_acctbal > 5000);
+
+-- SUBQUERY in HAVING statement
+select c_mktsegment, 
+    sum(c_acctbal) as acct_bal
+from "SNOWFLAKE_SAMPLE_DATA"."TPCH_SF001"."CUSTOMER"
+group by c_mktsegment
+having acct_bal > (select avg(avg_acctbal) from 
+                   (select sum(c_acctbal) as avg_acctbal from "SNOWFLAKE_SAMPLE_DATA"."TPCH_SF001"."CUSTOMER" group by c_mktsegment));
+
+-----------------------------------
+
+-- REAL World example (combination of JOINS and SUBQUERIES)
+
+create or replace table employee(employee_id number,
+                     empl_join_date date,
+                     dept varchar(10),
+                     salary number,
+                     manager_id number);
+                     
+insert into employee values(1,'2014-10-01','HR',40000,4),
+                                 (2,'2014-09-01','Tech',50000,9),
+                                 (3,'2018-09-01','Marketing',30000,5),
+                                 (4,'2017-09-01','HR',10000,5),
+                                 (5,'2019-09-01','HR',35000,9),
+                                 (6,'2015-09-01','Tech',90000,4),
+                                 (7,'2016-09-01','Marketing',20000,1);
+
+select * from employee;
+
+select employee_id,e.dept,e.salary
+  from employee e,
+              (select dept,avg(salary) as avsal 
+                  from employee 
+              group by dept
+              ) a
+ where e.salary > a.avsal 
+   and e.dept = a.dept;
+
+-- Subquery used in above example
+select dept,avg(salary) as avsal 
+                  from employee 
+              group by dept;
+
+--------------------------------------------
+
+----------------- CASE STATEMENT -----------------
+/*
+- The CASE statement goes through conditions and returns a value when the first condition is met (like an IF-THEN-ELSE statement). 
+- Once a condition is true, it will stop reading and return the result. 
+- If none of the conditions are true, it returns the value in the ELSE clause.
+- If there is no ELSE part and no conditions are true, it returns NULL value.
+*/
+
+create or replace table employee(employee_id number,
+                     empl_join_date date,
+                     dept varchar(10),
+                     salary number,
+                     manager_id number);
+                     
+insert into employee values(1,'2014-10-01','HR',40000,4),
+                                 (2,'2014-09-01','Tech',50000,9),
+                                 (3,'2018-09-01','Marketing',30000,5),
+                                 (4,'2017-09-01','HR',10000,5),
+                                 (5,'2019-09-01','HR',35000,9),
+                                 (6,'2015-09-01','Tech',90000,4),
+                                 (7,'2016-09-01','Marketing',20000,1);
+
+/************** CASE - case_value **************/
+select *, case dept
+    when 'HR' then 'Human Resource'
+    when 'Tech' then 'Technology' 
+    end case
+from employee;
+
+-- rename CASE column
+
+select *, case dept
+    when 'HR' then 'Human Resource'
+    when 'Tech' then 'Technology'  
+    end as flag
+from employee; 
+
+
+/************** CASE - search condition **************/
+
+select *, case 
+    when dept = 'HR' then '1'
+    when dept = 'Tech' then '2' 
+    end as flag
+from employee;
+
+-- another method to write multiple conditions
+select *, case 
+    when dept = 'HR' then '1'
+    when dept = 'Tech' and employee_id = 6 then '2' 
+    end as flag
+from employee;
+
+-- ELSE keyword
+select *, case 
+    when dept = 'HR' then 'Human Resource'
+    when dept = 'Tech' and employee_id = 6 then 'Technology' 
+    else 'INVALID DEPT'
+    end as flag
+from employee;
+
+select employee_id, manager_id, empl_join_date, case 
+    when dept = 'HR' then 'HRA'
+    when dept = 'Tech' and employee_id = 6 then 'TECHY'
+    else 'INVALID'
+    end as dept
+from employee;
+
+-- CASE statement in ORDER BY Clause
+
+select *, case 
+    when dept = 'HR' then '1'
+    when dept = 'Tech' then '2'
+    when dept = 'Marketing' then 'NULL'
+    else 'INVALID'
+    end as department
+from employee
+order by 
+case
+  when department = 'NULL' then salary
+  else department
+  end;
+-----------------------------------------------------------------
+
+
+---------------------- UNION, INTERSECT, EXCEPT and MINUS ----------------------
+create or replace table employees(employee_id number,
+                     empl_join_date date,
+                     dept varchar(10),
+                     salary number,
+                     manager_id number);
+                     
+insert into employees values(1,'2014-10-01','HR',40000,4),
+                                 (2,'2014-09-01','Tech',50000,9),
+                                 (3,'2018-09-01','Marketing',30000,5),
+                                 (4,'2017-09-01','HR',10000,5),
+                                 (5,'2019-09-01','HR',35000,9),
+                                 (6,'2015-09-01','Tech',90000,4),
+                                 (3,'2018-09-01','Marketing',30000,5),
+                                 (7,'2016-09-01','Marketing',20000,1);
+                  
+                  
+create or replace table new_employees(employee_id number,
+                     empl_join_date date,
+                     dept varchar(10),
+                     salary number,
+                     manager_id number);
+                     
+insert into new_employees values(8,'2014-10-01','HR',40000,4),
+                                 (12,'2014-09-01','Tech',50000,9),
+                                 (3,'2018-09-01','Marketing',30000,5),
+                                 (4,'2017-09-01','HR',10000,5),
+                                 (25,'2019-09-01','HR',35000,9),
+                                 (12,'2014-09-01','Tech',50000,9),
+                                 (86,'2015-09-01','Tech',90000,4),
+                                 (73,'2016-09-01','Marketing',20000,1);
+                                 
+/*
+--- UNION ---
+    -- The SQL UNION clause/operator is used to combine the results of two or more SELECT statements without returning any duplicate rows.
+    -- To use this UNION clause, each SELECT statement must have
+        - the same number of columns
+        - The same data type
+        - The columns in each SELECT statement must also be in the same order
+    -- However, similar columns in different SELECT statements need not have to be in the same length.
+*/
+
+select * from new_employees
+UNION
+select * from employees;
+
+select dept from employees
+UNION
+select dept from new_employees;
+
+select employee_id, dept from employees
+UNION
+select dept from new_employees;
+
+select * from employees where empl_join_date >= '2016-01-01'
+UNION
+select * from new_employees;
+
+select * from employees where empl_join_date >= '2016-01-01'
+UNION
+select * from new_employees where dept = 'Tech'
+UNION
+Select * from employees;
+
+-------------------------------------------------------------------
+
+--- UNION ALL ---
+    -- The UNION ALL operator is used to combine the results of two SELECT statements including duplicate rows.
+    -- The same rules that apply to the UNION clause will apply to the UNION ALL operator.
+
+select * from employees
+UNION ALL
+select * from new_employees;
+
+select dept from employees
+UNION ALL
+select dept from new_employees;
+
+select employee_id, dept from employees
+UNION ALL
+select dept from new_employees;
+
+select * from employees where empl_join_date >= '2016-01-01'
+UNION ALL
+select * from new_employees;
+
+create table xyz as
+select * from employees where empl_join_date >= '2016-01-01'
+UNION ALL
+select * from new_employees where dept = 'Tech';
+
+select * from xyz;
+
+
+--- INTERSECT ---
+/*
+    -- The SQL INTERSECT clause/operator is used to combine two SELECT statements, 
+       but returns rows only from the first SELECT statement that are identical to a row in the second SELECT statement. 
+       This means INTERSECT returns only common rows returned by the two SELECT statements.
+    -- Just as with the UNION operator, the same rules apply when using the INTERSECT operator
+*/
+
+select * from employees
+INTERSECT
+select * from new_employees;
+
+select dept from employees
+INTERSECT
+select dept from new_employees;
+
+select employee_id, dept from employees
+INTERSECT
+select dept from new_employees;
+
+select * from employees where empl_join_date >= '2016-01-01'
+INTERSECT
+select * from new_employees;
+
+select * from employees where empl_join_date >= '2016-01-01'
+INTERSECT
+select * from new_employees where dept = 'Tech';
+
+
+--- MINUS ---
+    -- The SQL MINUS operator is used to return all rows in the first SELECT statement that are not returned by the second SELECT statement. 
+    -- Each SELECT statement will define a dataset. 
+    -- The MINUS operator will retrieve all records from the first dataset and then remove from the results all records from the second dataset.
+select * from employees
+MINUS
+select * from new_employees;
+
+select dept from employees
+MINUS
+select dept from new_employees;
+
+select employee_id, dept from employees
+MINUS
+select dept from new_employees;
+
+select * from employees where empl_join_date >= '2016-01-01'
+MINUS
+select * from new_employees;
+
+select * from employees where empl_join_date >= '2016-01-01'
+MINUS
+select * from new_employees where dept = 'Tech';
+
+--- EXCEPT ---
+    -- There is absolutely no difference in the EXCEPT clause and the MINUS clause. 
+    -- They both serve the same purpose and they are simply two different ways of achieving the same functionality.
+    -- The SQL EXCEPT operator is used to return all rows in the first SELECT statement that are not returned by the second SELECT statement. 
+    -- Each SELECT statement will define a dataset. 
+    -- The EXCEPT operator will retrieve all records from the first dataset and then remove from the results all records from the second dataset.
+select * from employees
+EXCEPT
+select * from new_employees;
+
+select dept from employees
+EXCEPT
+select dept from new_employees;
+
+select employee_id, dept from employees
+EXCEPT
+select dept from new_employees;
+
+select * from employees where empl_join_date >= '2016-01-01'
+EXCEPT
+select * from new_employees;
+
+select * from employees where empl_join_date >= '2016-01-01'
+EXCEPT
+select * from new_employees where dept = 'Tech';
+
+
+---------------------- WORKING WITH ROW NUMBERS ----------------------
+/* 
+-- Working with Row Numbers in snowflake is straight forward as in other Databases such as Oracle, MySQL, Postgres
+-- We will learn two ways to generate row numbers for a table and then, will perform operations on it
+
+-------- SEQUENCES -------- 
+-- CREATE SEQUENCE: Creates a new sequence, which can be used for generating sequential, unique numbers.
+*/
+
+CREATE OR REPLACE SEQUENCE sequence1 
+start = 1 
+INCREMENT = 1 
+comment = 'this sequence will be used to generate employee IDs';
+
+select * from "DEMO_DB"."INFORMATION_SCHEMA"."SEQUENCES";
+
+show sequences;
+
+create or replace table employees(employee_id1 integer,
+                     employee_id number,
+                     empl_join_date date,
+                     dept varchar(10),
+                     salary number,
+                     manager_id number);
+                                 
+insert into employees values(sequence1.nextval, 1,'2014-10-01','HR',40000,4),
+                                 (sequence1.nextval, 2,'2014-09-01','Tech',50000,9),
+                                 (sequence1.nextval, 3,'2018-09-01','Marketing',30000,5),
+                                 (sequence1.nextval, 4,'2017-09-01','HR',10000,5),
+                                 (sequence1.nextval, 5,'2019-09-01','HR',35000,9),
+                                 (sequence1.nextval, 6,'2015-09-01','Tech',90000,4),
+                                 (sequence1.nextval, 3,'2018-09-01','Marketing',30000,5),
+                                 (sequence1.nextval, 7,'2016-09-01','Marketing',20000,1);
+
+select * from employees;
+
+-- verify what next value of sequence will be
+show sequences;
+
+
+// Better solution:
+CREATE OR REPLACE SEQUENCE sequence2
+start = 1 
+INCREMENT = 1 
+comment = 'will be used to generate sequential numbers';
+
+create or replace table employees(employee_id1 integer default sequence2.nextval,
+                     employee_id number,
+                     empl_join_date date,
+                     dept varchar(10),
+                     salary number,
+                     manager_id number);
+
+insert into employees (employee_id, empl_join_date, dept, salary, manager_id) 
+                           values(1,'2014-10-01','HR',40000,4),
+                                 (2,'2014-09-01','Tech',50000,9),
+                                 (3,'2018-09-01','Marketing',30000,5),
+                                 (4,'2017-09-01','HR',10000,5),
+                                 (5,'2019-09-01','HR',35000,9),
+                                 (6,'2015-09-01','Tech',90000,4),
+                                 (3,'2018-09-01','Marketing',30000,5),
+                                 (7,'2016-09-01','Marketing',20000,1);
+                                 
+select * from employees;
+
+
+-------- IDENTITY --------
+/*
+-- Identity column of a table is a column whose value increases automatically. 
+-- The value in an identity column is created by the server. 
+-- A user generally cannot insert a value into an identity column. 
+-- Identity column can be used to uniquely identify the rows in the table.
+*/
+
+create or replace table employees(row_number integer identity(1001,1),
+                     employee_id number,
+                     empl_join_date date,
+                     dept varchar(10),
+                     salary number,
+                     manager_id number);
+                     
+insert into employees (employee_id, empl_join_date, dept, salary, manager_id) 
+                           values(1,'2014-10-01','HR',40000,4),
+                                 (2,'2014-09-01','Tech',50000,9),
+                                 (3,'2018-09-01','Marketing',30000,5),
+                                 (4,'2017-09-01','HR',10000,5),
+                                 (5,'2019-09-01','HR',35000,9),
+                                 (6,'2015-09-01','Tech',90000,4),
+                                 (3,'2018-09-01','Marketing',30000,5),
+                                 (7,'2016-09-01','Marketing',20000,1);
+
+select * from employees;
+
+
+-------- AUTOINCREMENT --------
+/*
+-- Auto-increment allows a unique number to be generated automatically when a new record is inserted into a table.
+-- Often this is the primary key field that we would like to be created automatically every time a new record is inserted.
+*/
+
+create or replace table employees(row_number integer autoincrement start 102000 increment 10,
+                     employee_id number,
+                     empl_join_date date,
+                     dept varchar(10),
+                     salary number,
+                     manager_id number);
+                     
+insert into employees (employee_id, empl_join_date, dept, salary, manager_id) 
+                           values(1,'2014-10-01','HR',40000,4),
+                                 (2,'2014-09-01','Tech',50000,9),
+                                 (3,'2018-09-01','Marketing',30000,5),
+                                 (4,'2017-09-01','HR',10000,5),
+                                 (5,'2019-09-01','HR',35000,9),
+                                 (6,'2015-09-01','Tech',90000,4),
+                                 (3,'2018-09-01','Marketing',30000,5),
+                                 (7,'2016-09-01','Marketing',20000,1);
+
+select * from employees;
+
+
+-------- ROW_NUMBER function --------
+-- Returns a unique row number for each row within a partition.
+-- The row number starts at 1 and continues up sequentially.
+
+select * from employees;
+
+select row_number() over (partition by dept order by salary desc) as counter, * from employees;
+
+select row_number() over (order by NULL) as counter, * from employees;
+
+select row_number() over (order by 1) as counter, * from employees;
+
+
+---------------------- INFORMATION SCHEMA ----------------------
+/*
+-- Each database created in snowlfake account automatically includes a built-in, read-only schema named INFORMATION_SCHEMA. 
+-- The schema contains the following objects:
+    -- Views for all the objects contained in the database, 
+       as well as views for account-level objects (i.e. non-database objects such as roles, warehouses, and databases)
+    -- Table functions for historical and usage data across your account.
+    -- All other metadata about tables, schemas, views, columns, pipes, procedures etc. of the Database
+*/
+
+select * from "SNOWFLAKE_SAMPLE_DATA"."INFORMATION_SCHEMA"."COLUMNS" order by table_schema;
+select * from "SNOWFLAKE_SAMPLE_DATA"."INFORMATION_SCHEMA"."TABLES";
+
+select * 
+from "SNOWFLAKE_SAMPLE_DATA"."INFORMATION_SCHEMA"."TABLES"
+where table_schema = 'TPCH_SF001';
+
+drop table customer;
+
+SELECT 'drop table '||table_name||';' as drop_tables
+FROM  "SNOWFLAKE_SAMPLE_DATA"."INFORMATION_SCHEMA"."TABLES" tables 
+WHERE table_schema = 'TPCH_SF001'
+ORDER BY 1;
+
+drop table CUSTOMER;
+drop table JCUSTOMER;
+drop table JLINEITEM;
+drop table JNATION;
+drop table JORDERS;
+drop table JPART;
+drop table JPARTSUPP;
+drop table JREGION;
+drop table JSUPPLIER;
+drop table LINEITEM;
+drop table NATION;
+drop table ORDERS;
+drop table PART;
+drop table PARTSUPP;
+drop table REGION;
+drop table SUPPLIER;
+
+select * from information_schema.load_history where table_name = 'EMPLOYEE';
+METADATA$FILE_ROW_NUMBER;
+

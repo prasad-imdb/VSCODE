@@ -1,0 +1,63 @@
+CREATE PROCEDURE "PRASAD1"."SCHEMA"."TBL_STORES_REV"()
+  RETURNS VARCHAR
+  LANGUAGE javascript
+  AS
+  $$
+  var rs = snowflake.execute( { sqlText: 
+`INSERT INTO "PRASAD1"."SCHEMA"."TBL_STORES_REV_FF"
+SELECT
+    "STORE_NAME",
+    "PRODUCT_NAME",
+    SUM("QUANTITY" * "PRICE") AS revenue
+FROM
+    "PRASAD1"."SCHEMA"."SALES" 
+        INNER JOIN
+    "PRASAD1"."SCHEMA"."PRODUCTS" ON "PRODUCTS"."ID" = "SALES"."PRODUCT_ID"
+        INNER JOIN
+    "PRASAD1"."SCHEMA"."STORES" ON "STORES"."ID" = "SALES"."STORE_ID"
+GROUP BY "STORE_NAME" , "PRODUCT_NAME";
+`
+} );
+return 'Done.';
+$$;
+
+CALL "PRASAD1"."SCHEMA"."TBL_STORES_REV"()
+
+
+
+
+
+DROP procedure "DEV_PEOPLE_ANALYTICS"."RDS_SMARTRECRUITERS".TMP();
+create or replace procedure "DEV_PEOPLE_ANALYTICS"."RDS_SMARTRECRUITERS".TMP()
+    returns string
+    language javascript
+    strict
+    execute as owner
+    as
+    $$
+     
+    
+    var sql_command =   "INSERT INTO DEV_PEOPLE_ANALYTICS.RDS_SMARTRECRUITERS.TMP VALUES ('A')";
+    var sql_command2 =   "INSERT INTO DEV_PEOPLE_ANALYTICS.RDS_SMARTRECRUITERS.TMP VALUES ('B')";
+    
+    
+    try 
+    {
+        snowflake.createStatement( {sqlText: "BEGIN TRANSACTION"}).execute(); 
+   
+        snowflake.execute ( {sqlText: sql_command} );
+        snowflake.execute ({sqlText: sql_command2} );
+            
+       snowflake.createStatement( {sqlText: "COMMIT"}).execute();
+            
+       return "Succeeded.";   // Return a success/error indicator.
+        }
+   
+       catch (err)  {
+        return "Failed: " + err;   // Return a success/error indicator.
+        }
+     
+        
+    $$
+    ;
+    
